@@ -1,0 +1,5 @@
+{
+  "name": "Basera",
+  "description": "A PG, hostel, and mess finder for students in Koni, Bilaspur, Chhattisgarh.",
+  "requestFramePermissions": ["geolocation"]
+}

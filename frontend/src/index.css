@@ -1,0 +1,74 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Plus Jakarta Sans", "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  /* Refined Color Palette (HSL based) */
+  --color-brand-50: oklch(0.98 0.01 165.74);
+  --color-brand-100: oklch(0.94 0.03 165.74);
+  --color-brand-500: oklch(0.64 0.17 165.74);
+  /* Custom Emerald */
+  --color-brand-600: oklch(0.55 0.16 165.74);
+  --color-brand-700: oklch(0.45 0.14 165.74);
+
+  --color-accent-600: oklch(0.68 0.19 50.48);
+  /* Warm Orange */
+
+  --color-surface-50: oklch(0.99 0.005 260);
+  --color-surface-100: oklch(0.97 0.005 260);
+  --color-surface-200: oklch(0.94 0.01 260);
+
+  /* Custom Shadows */
+  --shadow-premium: 0 20px 50px -12px oklch(0 0 0 / 0.08);
+  --shadow-glass: 0 8px 32px 0 oklch(0 0 0 / 0.05);
+}
+
+@layer base {
+  body {
+    @apply bg-[var(--color-surface-50)] text-zinc-900 selection:bg-brand-500/20 selection:text-brand-700;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply tracking-tight;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-white/70 backdrop-blur-xl border border-white/40 shadow-glass;
+  }
+
+  .premium-blur {
+    @apply backdrop-blur-md bg-white/80 border-b border-zinc-100/50;
+  }
+
+  .btn-primary {
+    @apply bg-zinc-900 text-white px-6 py-3 rounded-2xl font-bold transition-all hover:bg-zinc-800 hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-zinc-200 disabled:opacity-50 disabled:pointer-events-none;
+  }
+
+  .btn-brand {
+    @apply bg-brand-600 text-white px-6 py-3 rounded-2xl font-bold transition-all hover:bg-brand-700 hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-brand-500/20 disabled:opacity-50 disabled:pointer-events-none;
+  }
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-surface-100;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-zinc-300 rounded-full border-4 border-solid border-surface-100;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-zinc-400;
+}
