@@ -165,5 +165,25 @@ export const api = {
       body: JSON.stringify({ student_id: studentId, mess_id: messId })
     });
     return res.json();
+  },
+
+  async fetchMessages(listingId: number, user1: number, user2: number): Promise<any[]> {
+    const res = await fetch(`/api/messages/${listingId}/${user1}/${user2}`);
+    return res.json();
+  },
+
+  async fetchConversations(userId: number): Promise<any[]> {
+    const res = await fetch(`/api/conversations/${userId}`);
+    if (!res.ok) return [];
+    return res.json();
+  },
+
+  async sendMessage(listingId: number, senderId: number, receiverId: number, content: string): Promise<any> {
+    const res = await fetch('/api/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ listing_id: listingId, sender_id: senderId, receiver_id: receiverId, content })
+    });
+    return res.json();
   }
 };

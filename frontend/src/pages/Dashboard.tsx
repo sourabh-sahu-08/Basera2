@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { useUser } from '../context/UserContext';
-import { Listing, Mess, Booking, Subscription, Offer } from '../types';
+import { Listing, Mess, Booking, Subscription, Offer, Conversation } from '../types';
 import {
   Building2, MapPin, Star, Heart, Activity, User as UserIcon, LogOut, ChevronRight, CheckCircle, Clock, ShieldCheck, Camera, Check, ChefHat, Trash2, Home, Utensils, Calendar, Settings, Bell, TrendingUp, Users, Coffee, Menu, Search, Filter, Mail, Phone, Lock, Eye, EyeOff, LayoutDashboard, CalendarDays, Key, CreditCard, Tag, FileText, ArrowUpRight, Copy, ExternalLink, Plus, Map, PlayCircle, MessageCircle, Info, ChevronDown, Award, Globe, HeartPulse, XCircle, FilePlus, GraduationCap, UploadCloud, X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
+import ChatBox from '../components/ChatBox';
 
 export default function Dashboard() {
   const { user } = useUser();
@@ -16,6 +17,8 @@ export default function Dashboard() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [offers, setOffers] = useState<Offer[]>([]);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [activeChat, setActiveChat] = useState<Conversation | null>(null);
   const [loading, setLoading] = useState(true);
   const [showOfferModal, setShowOfferModal] = useState(false);
   const [showMenuModal, setShowMenuModal] = useState(false);
@@ -77,12 +80,14 @@ export default function Dashboard() {
         setOffers(offersData);
 
         if (user.role === 'owner') {
-          const [listingsData, bookingsData] = await Promise.all([
+          const [listingsData, bookingsData, convData] = await Promise.all([
             api.fetchOwnerListings(user.id),
-            api.fetchOwnerBookings(user.id)
+            api.fetchOwnerBookings(user.id),
+            api.fetchConversations(user.id)
           ]);
           setListings(listingsData);
           setBookings(bookingsData);
+          setConversations(convData);
         } else if (user.role === 'mess_owner') {
           const [messesData, subsData] = await Promise.all([
             api.fetchOwnerMesses(user.id),
@@ -585,6 +590,35 @@ export default function Dashboard() {
                       </tbody>
                     </table>
                   </div>
+                </div>
+              </section>
+
+              <section>
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-black text-emerald-950">Active Conversations</h2>
+                  <span className="px-3 py-1 bg-emerald-100 text-emerald-700 text-[10px] font-bold rounded-full">{conversations.length} Threads</span>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {conversations.map(conv => (
+                    <div key={`${conv.listing_id}-${conv.student_id}`} onClick={() => setActiveChat(conv)} className="bg-white rounded-[2rem] p-6 border border-emerald-100 shadow-sm cursor-pointer hover:border-emerald-300 transition-all flex flex-col gap-3 group">
+                      <div className="flex justify-between items-start">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-emerald-50 rounded-full flex items-center justify-center text-emerald-600 font-bold group-hover:bg-emerald-500 group-hover:text-white transition-colors">
+                            {conv.student_name[0]}
+                          </div>
+                          <div>
+                            <h3 className="font-bold text-emerald-950 leading-tight">{conv.student_name}</h3>
+                            <div className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded mt-1 inline-block">{conv.listing_name}</div>
+                          </div>
+                        </div>
+                        <span className="text-[10px] text-emerald-500 font-bold bg-emerald-50 px-2 py-1 rounded-full whitespace-nowrap">{new Date(conv.last_message_date).toLocaleDateString()}</span>
+                      </div>
+                      <p className="text-sm text-zinc-500 truncate bg-zinc-50 p-3 rounded-xl border border-zinc-100 italic">"{conv.last_message}"</p>
+                    </div>
+                  ))}
+                  {conversations.length === 0 && (
+                    <div className="bg-white rounded-[2rem] p-8 border border-emerald-100 shadow-sm text-center col-span-2 text-emerald-400 italic">No messages yet.</div>
+                  )}
                 </div>
               </section>
 
@@ -1112,6 +1146,18 @@ export default function Dashboard() {
           </div>
         )}
       </AnimatePresence>
+
+      {/* Owner Chat Modal */}
+      {user && activeChat && (
+        <ChatBox 
+          listingId={activeChat.listing_id}
+          currentUserId={user.id}
+          targetUserId={activeChat.student_id}
+          targetUserName={activeChat.student_name}
+          isOpen={!!activeChat}
+          onClose={() => setActiveChat(null)}
+        />
+      )}
     </div>
   );
 }
