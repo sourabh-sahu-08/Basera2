@@ -1,4 +1,5 @@
 import express from "express";
+import fs from "fs";
 import { createServer as createViteServer } from "vite";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -16,6 +17,13 @@ async function startServer() {
   initDb();
 
   app.use(express.json());
+
+  // Ensure uploads directory exists and serve it
+  const uploadsDir = path.join(__dirname, "../uploads");
+  if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir);
+  }
+  app.use("/uploads", express.static(uploadsDir));
 
   // API Routes
   app.use("/api", apiRoutes);

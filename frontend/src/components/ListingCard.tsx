@@ -11,13 +11,23 @@ interface Props {
 }
 
 export default function ListingCard({ listing }: Props) {
-  const amenities = listing.amenities.split(',').map(a => a.trim());
+  const amenities = (listing.amenities || '').split(',').filter(Boolean).map(a => a.trim());
   const [showNumber, setShowNumber] = useState(false);
   const [isBooked, setIsBooked] = useState(false);
   const { user } = useUser();
   const navigate = useNavigate();
 
-  const handleBook = async () => {
+  let displayImage = listing.image;
+  try {
+    const parsed = JSON.parse(listing.image);
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      displayImage = parsed[0];
+    }
+  } catch (e) {
+    // Falls back to string (mock data)
+  }
+
+  const handleBookClick = () => {
     if (!user) {
       navigate('/login');
       return;
@@ -26,28 +36,27 @@ export default function ListingCard({ listing }: Props) {
       alert('Please switch to a Student role to book.');
       return;
     }
+    navigate(`/book/${listing.id}`);
+  };
 
-    try {
-      const data = await api.createBooking(user.id, listing.id);
-      if (data.id) {
-        setIsBooked(true);
-      }
-    } catch (err) {
-      console.error(err);
-    }
+  const handleCardClick = (e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.closest('button')) return;
+    navigate(`/property/${listing.id}`);
   };
 
   return (
     <motion.div
+      onClick={handleCardClick}
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       whileHover={{ y: -8 }}
-      className="group flex flex-col bg-white rounded-[2.5rem] overflow-hidden border border-zinc-100 shadow-premium transition-all duration-500"
+      className="group flex flex-col bg-white rounded-[2.5rem] overflow-hidden border border-zinc-100 shadow-premium transition-all duration-500 cursor-pointer"
     >
       <div className="relative h-72 overflow-hidden">
         <img
-          src={listing.image}
+          src={displayImage}
           alt={listing.name}
           className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
           referrerPolicy="no-referrer"
@@ -58,6 +67,11 @@ export default function ListingCard({ listing }: Props) {
           <span className="px-3 py-1.5 bg-white/90 backdrop-blur-md text-[10px] font-black uppercase tracking-widest text-brand-700 rounded-xl shadow-sm border border-white/50">
             {listing.type}
           </span>
+          {listing.gender && (
+            <span className="px-3 py-1.5 bg-blue-50/90 backdrop-blur-md text-[10px] font-black uppercase tracking-widest text-blue-700 rounded-xl shadow-sm border border-blue-100">
+              {listing.gender === 'male' ? 'Boys' : listing.gender === 'female' ? 'Girls' : 'Unisex'}
+            </span>
+          )}
           <span className="px-3 py-1.5 bg-zinc-900/80 backdrop-blur-md text-[10px] font-black uppercase tracking-widest text-white rounded-xl shadow-sm border border-white/10">
             Verified
           </span>
@@ -141,7 +155,7 @@ export default function ListingCard({ listing }: Props) {
           </div>
 
           <button
-            onClick={handleBook}
+            onClick={handleBookClick}
             disabled={isBooked}
             className={`flex-1 flex items-center justify-center space-x-2 px-6 py-4 rounded-2xl text-sm font-black uppercase tracking-widest transition-all ${isBooked
                 ? 'bg-brand-50 text-brand-700 pointer-events-none'

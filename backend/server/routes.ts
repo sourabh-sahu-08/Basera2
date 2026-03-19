@@ -1,5 +1,40 @@
 import { Router } from "express";
 import db from "./db.js";
+import multer from "multer";
+import path from "path";
+import { fileURLToPath } from "url";
+import fs from "fs";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const dir = path.join(__dirname, "../../uploads");
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    cb(null, dir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(null, file.fieldname + "-" + uniqueSuffix + path.extname(file.originalname));
+  },
+});
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png|pdf/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+    if (extname && mimetype) {
+      return cb(null, true);
+    }
+    cb(new Error("Only .png, .jpg, .jpeg and .pdf format allowed!"));
+  },
+});
 
 const router = Router();
 
@@ -164,17 +199,79 @@ router.get("/owner/messes/:ownerId", (req, res) => {
   res.json(messes);
 });
 
-router.post("/listings", (req, res) => {
-  const { owner_id, type, name, location, price, image, description, terms, contact, amenities } = req.body;
-  const info = db.prepare(`
-    INSERT INTO listings (owner_id, type, name, location, price, image, description, terms, contact, amenities)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(owner_id, type, name, location, price, image, description, terms, contact, amenities);
-  res.json({ id: info.lastInsertRowid });
+router.post("/listings", upload.array('images', 10), (req, res) => {
+  try {
+    const files = req.files as Express.Multer.File[];
+    if (!files || files.length < 4) {
+      return res.status(400).json({ error: "At least 4 property images are required." });
+    }
+    const imageUrls = files.map(file => '/uploads/' + file.filename);
+    const imageString = JSON.stringify(imageUrls);
+
+    const { owner_id, type, name, location, price, description, terms, contact, amenities, gender } = req.body;
+    const info = db.prepare(`
+      INSERT INTO listings (owner_id, type, name, location, price, image, description, terms, contact, amenities, gender)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(owner_id, type, name, location, price, imageString, description, terms, contact, amenities, gender || 'unisex');
+    
+    res.json({ id: info.lastInsertRowid });
+  } catch (error: any) {
+    if (error instanceof multer.MulterError) {
+      return res.status(400).json({ error: error.message });
+    }
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get("/listings/:id", (req, res) => {
+  const parsedId = parseInt(req.params.id, 10);
+  const listing = db.prepare("SELECT * FROM listings WHERE id = ?").get(parsedId);
+  if (!listing) return res.status(404).json({ error: "Listing not found" });
+  res.json(listing);
 });
 
 router.delete("/listings/:id", (req, res) => {
   db.prepare("DELETE FROM listings WHERE id = ?").run(req.params.id);
+  res.json({ success: true });
+});
+
+router.post("/bookings/secure", upload.fields([
+  { name: 'aadhar_card', maxCount: 1 },
+  { name: 'college_id', maxCount: 1 },
+  { name: 'declaration', maxCount: 1 }
+]), (req, res) => {
+  try {
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+    const { student_id, listing_id, contact_number, move_in_date, duration_months } = req.body;
+    
+    // Check if required files are present
+    if (!files['aadhar_card'] || !files['college_id'] || !files['declaration']) {
+      return res.status(400).json({ error: "All required documents must be uploaded" });
+    }
+
+    const aadhar_card_url = '/uploads/' + files['aadhar_card'][0].filename;
+    const college_id_url = '/uploads/' + files['college_id'][0].filename;
+    const declaration_url = '/uploads/' + files['declaration'][0].filename;
+
+    const info = db.prepare(`
+      INSERT INTO bookings (student_id, listing_id, status, contact_number, move_in_date, duration_months, aadhar_card_url, college_id_url, declaration_url)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      student_id, listing_id, 'pending_verification', contact_number, move_in_date, duration_months,
+      aadhar_card_url, college_id_url, declaration_url
+    );
+
+    res.json({ id: info.lastInsertRowid });
+  } catch (error: any) {
+    if (error instanceof multer.MulterError) {
+      return res.status(400).json({ error: error.message });
+    }
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.delete("/bookings/:id", (req, res) => {
+  db.prepare("DELETE FROM bookings WHERE id = ?").run(req.params.id);
   res.json({ success: true });
 });
 
