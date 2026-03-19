@@ -716,297 +716,298 @@ export default function Dashboard() {
       );
     }
 
-    return (
-      <div className="relative">
-        {content}
-
-        {/* MODALS */}
-        <AnimatePresence>
-          {showOfferModal && (
-            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-              <motion.div
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                onClick={() => setShowOfferModal(false)}
-                className="absolute inset-0 bg-zinc-900/60 backdrop-blur-sm"
-              />
-              <motion.div
-                initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
-                className="relative bg-white rounded-[2.5rem] p-8 w-full max-w-md shadow-2xl"
-              >
-                <h2 className="text-2xl font-bold mb-6">Create New Offer</h2>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-xs font-bold text-zinc-400 uppercase mb-1">Offer Title</label>
-                    <input
-                      type="text"
-                      value={newOffer.title}
-                      onChange={e => setNewOffer({ ...newOffer, title: e.target.value })}
-                      className="w-full px-4 py-3 bg-zinc-50 border border-zinc-100 rounded-xl focus:ring-2 focus:ring-emerald-200"
-                      placeholder="e.g. Early Bird Discount"
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-bold text-zinc-400 uppercase mb-1">Discount %</label>
-                      <input
-                        type="number"
-                        value={newOffer.discount_percent}
-                        onChange={e => setNewOffer({ ...newOffer, discount_percent: parseInt(e.target.value) })}
-                        className="w-full px-4 py-3 bg-zinc-50 border border-zinc-100 rounded-xl focus:ring-2 focus:ring-emerald-200"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-zinc-400 uppercase mb-1">Expiry Date</label>
-                      <input
-                        type="date"
-                        value={newOffer.expiry_date}
-                        onChange={e => setNewOffer({ ...newOffer, expiry_date: e.target.value })}
-                        className="w-full px-4 py-3 bg-zinc-50 border border-zinc-100 rounded-xl focus:ring-2 focus:ring-emerald-200"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-zinc-400 uppercase mb-1">Description</label>
-                    <textarea
-                      value={newOffer.description}
-                      onChange={e => setNewOffer({ ...newOffer, description: e.target.value })}
-                      className="w-full px-4 py-3 bg-zinc-50 border border-zinc-100 rounded-xl focus:ring-2 focus:ring-emerald-200 h-24"
-                      placeholder="Describe the offer..."
-                    />
-                  </div>
-                  <button
-                    onClick={createOffer}
-                    className="w-full py-4 bg-zinc-900 text-white rounded-2xl font-bold hover:bg-zinc-800 transition-colors"
-                  >
-                    Publish Offer
-                  </button>
-                </div>
-              </motion.div>
-            </div>
-          )}
-
-          {showMenuModal && (
-            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-              <motion.div
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                onClick={() => setShowMenuModal(false)}
-                className="absolute inset-0 bg-zinc-900/60 backdrop-blur-sm"
-              />
-              <motion.div
-                initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
-                className="relative bg-white rounded-[2.5rem] p-8 w-full max-w-md shadow-2xl"
-              >
-                <h2 className="text-2xl font-bold mb-6">Update Today's Menu</h2>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-xs font-bold text-zinc-400 uppercase mb-1">Menu Content</label>
-                    <textarea
-                      value={newMenu}
-                      onChange={e => setNewMenu(e.target.value)}
-                      className="w-full px-4 py-3 bg-zinc-50 border border-zinc-100 rounded-xl focus:ring-2 focus:ring-orange-200 h-48"
-                      placeholder="e.g. Breakfast: Poha, Lunch: Dal Tadka..."
-                    />
-                  </div>
-                  <button
-                    onClick={() => updateMenu(messes[0].id)}
-                    className="w-full py-4 bg-orange-600 text-white rounded-2xl font-bold hover:bg-orange-700 transition-colors shadow-lg shadow-orange-200"
-                  >
-                    Update Menu
-                  </button>
-                </div>
-              </motion.div>
-            </div>
-          )}
-
-          {showListingModal && (
-            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-              <motion.div
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                onClick={() => setShowListingModal(false)}
-                className="absolute inset-0 bg-zinc-900/60 backdrop-blur-sm"
-              />
-              <motion.div
-                initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
-                className="relative bg-white rounded-[2.5rem] p-8 w-full max-w-2xl shadow-2xl max-h-[90vh] overflow-y-auto"
-              >
-                <h2 className="text-2xl font-bold mb-6">Add New Property</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-xs font-bold text-zinc-400 uppercase mb-1">Property Name</label>
-                    <input
-                      type="text"
-                      value={newListing.name}
-                      onChange={e => setNewListing({ ...newListing, name: e.target.value })}
-                      className="w-full px-4 py-3 bg-zinc-50 border border-zinc-100 rounded-xl focus:ring-2 focus:ring-emerald-200"
-                      placeholder="e.g. Shree Ram PG"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-zinc-400 uppercase mb-1">Type</label>
-                    <select
-                      value={newListing.type}
-                      onChange={e => setNewListing({ ...newListing, type: e.target.value as any })}
-                      className="w-full px-4 py-3 bg-zinc-50 border border-zinc-100 rounded-xl focus:ring-2 focus:ring-emerald-200"
-                    >
-                      <option value="pg">PG</option>
-                      <option value="hostel">Hostel</option>
-                      <option value="flat">Flat</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-zinc-400 uppercase mb-1">Location</label>
-                    <input
-                      type="text"
-                      value={newListing.location}
-                      onChange={e => setNewListing({ ...newListing, location: e.target.value })}
-                      className="w-full px-4 py-3 bg-zinc-50 border border-zinc-100 rounded-xl focus:ring-2 focus:ring-emerald-200"
-                      placeholder="e.g. Koni Main Road"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-zinc-400 uppercase mb-1">Price (Monthly)</label>
-                    <input
-                      type="number"
-                      value={newListing.price}
-                      onChange={e => setNewListing({ ...newListing, price: parseInt(e.target.value) })}
-                      className="w-full px-4 py-3 bg-zinc-50 border border-zinc-100 rounded-xl focus:ring-2 focus:ring-emerald-200"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-zinc-400 uppercase mb-1">Contact Number</label>
-                    <input
-                      type="text"
-                      value={newListing.contact}
-                      onChange={e => setNewListing({ ...newListing, contact: e.target.value })}
-                      className="w-full px-4 py-3 bg-zinc-50 border border-zinc-100 rounded-xl focus:ring-2 focus:ring-emerald-200"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-zinc-400 uppercase mb-1">Amenities (comma separated)</label>
-                    <input
-                      type="text"
-                      value={newListing.amenities}
-                      onChange={e => setNewListing({ ...newListing, amenities: e.target.value })}
-                      className="w-full px-4 py-3 bg-zinc-50 border border-zinc-100 rounded-xl focus:ring-2 focus:ring-emerald-200"
-                      placeholder="WiFi, RO Water, Bed"
-                    />
-                  </div>
-                  <div className="md:col-span-2">
-                    <label className="block text-xs font-bold text-zinc-400 uppercase mb-1">Description</label>
-                    <textarea
-                      value={newListing.description}
-                      onChange={e => setNewListing({ ...newListing, description: e.target.value })}
-                      className="w-full px-4 py-3 bg-zinc-50 border border-zinc-100 rounded-xl focus:ring-2 focus:ring-emerald-200 h-24"
-                    />
-                  </div>
-                </div>
-                <button
-                  onClick={createListing}
-                  className="w-full mt-8 py-4 bg-emerald-600 text-white rounded-2xl font-bold hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-200"
-                >
-                  Add Property
-                </button>
-              </motion.div>
-            </div>
-          )}
-        </AnimatePresence>
-
-        {/* Mess Modal */}
-        <AnimatePresence>
-          {showMessModal && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={() => setShowMessModal(false)}
-                className="absolute inset-0 bg-orange-950/20 backdrop-blur-sm"
-              />
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                className="relative bg-white rounded-[2.5rem] p-8 max-w-lg w-full shadow-2xl overflow-y-auto max-h-[90vh]"
-              >
-                <div className="flex items-center justify-between mb-8">
-                  <h3 className="text-2xl font-bold text-orange-950">Setup Your Kitchen</h3>
-                  <button
-                    onClick={() => setShowMessModal(false)}
-                    className="p-2 hover:bg-orange-50 rounded-xl transition-colors text-orange-400"
-                  >
-                    <XCircle className="w-6 h-6" />
-                  </button>
-                </div>
-                <div className="space-y-6">
-                  <div>
-                    <label className="block text-[10px] font-bold text-orange-400 uppercase tracking-widest mb-2">Mess Name</label>
-                    <input
-                      type="text"
-                      className="w-full px-4 py-3 bg-zinc-50 border border-zinc-100 rounded-xl focus:ring-2 focus:ring-orange-200"
-                      value={newMess.name}
-                      onChange={e => setNewMess({ ...newMess, name: e.target.value })}
-                      placeholder="e.g. Anand Mess"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold text-orange-400 uppercase tracking-widest mb-2">Location</label>
-                    <input
-                      type="text"
-                      className="w-full px-4 py-3 bg-zinc-50 border border-zinc-100 rounded-xl focus:ring-2 focus:ring-orange-200"
-                      value={newMess.location}
-                      onChange={e => setNewMess({ ...newMess, location: e.target.value })}
-                      placeholder="e.g. Koni, Bilaspur"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold text-orange-400 uppercase tracking-widest mb-2">Price Per Month (₹)</label>
-                    <input
-                      type="number"
-                      className="w-full px-4 py-3 bg-zinc-50 border border-zinc-100 rounded-xl focus:ring-2 focus:ring-orange-200"
-                      value={newMess.price_per_month}
-                      onChange={e => setNewMess({ ...newMess, price_per_month: e.target.value })}
-                      placeholder="e.g. 3000"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold text-orange-400 uppercase tracking-widest mb-2">Initial Daily Menu</label>
-                    <input
-                      type="text"
-                      className="w-full px-4 py-3 bg-zinc-50 border border-zinc-100 rounded-xl focus:ring-2 focus:ring-orange-200"
-                      value={newMess.menu}
-                      onChange={e => setNewMess({ ...newMess, menu: e.target.value })}
-                      placeholder="e.g. Roti, Dal, Paneer"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold text-orange-400 uppercase tracking-widest mb-2">Image URL</label>
-                    <input
-                      type="text"
-                      className="w-full px-4 py-3 bg-zinc-50 border border-zinc-100 rounded-xl focus:ring-2 focus:ring-orange-200"
-                      value={newMess.image}
-                      onChange={e => setNewMess({ ...newMess, image: e.target.value })}
-                      placeholder="https://..."
-                    />
-                  </div>
-                </div>
-                <button
-                  onClick={async () => {
-                    const mess = await api.createMess({ ...newMess, owner_id: user?.id });
-                    if (mess) {
-                      setMesses([mess, ...messes]);
-                      setShowMessModal(false);
-                      setNewMess({ name: '', location: '', price_per_month: '', menu: '', image: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&q=80' });
-                    }
-                  }}
-                  className="w-full mt-8 py-4 bg-orange-600 text-white rounded-2xl font-bold hover:bg-orange-700 transition-colors shadow-lg shadow-orange-200"
-                >
-                  Register Kitchen
-                </button>
-              </motion.div>
-            </div>
-          )}
-        </AnimatePresence>
-      </div>
-    );
   }
+
+  return (
+    <div className="relative">
+      {content}
+
+      {/* MODALS */}
+      <AnimatePresence>
+        {showOfferModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => setShowOfferModal(false)}
+              className="absolute inset-0 bg-zinc-900/60 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+              className="relative bg-white rounded-[2.5rem] p-8 w-full max-w-md shadow-2xl"
+            >
+              <h2 className="text-2xl font-bold mb-6">Create New Offer</h2>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-zinc-400 uppercase mb-1">Offer Title</label>
+                  <input
+                    type="text"
+                    value={newOffer.title}
+                    onChange={e => setNewOffer({ ...newOffer, title: e.target.value })}
+                    className="w-full px-4 py-3 bg-zinc-50 border border-zinc-100 rounded-xl focus:ring-2 focus:ring-emerald-200"
+                    placeholder="e.g. Early Bird Discount"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-zinc-400 uppercase mb-1">Discount %</label>
+                    <input
+                      type="number"
+                      value={newOffer.discount_percent}
+                      onChange={e => setNewOffer({ ...newOffer, discount_percent: parseInt(e.target.value) })}
+                      className="w-full px-4 py-3 bg-zinc-50 border border-zinc-100 rounded-xl focus:ring-2 focus:ring-emerald-200"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-zinc-400 uppercase mb-1">Expiry Date</label>
+                    <input
+                      type="date"
+                      value={newOffer.expiry_date}
+                      onChange={e => setNewOffer({ ...newOffer, expiry_date: e.target.value })}
+                      className="w-full px-4 py-3 bg-zinc-50 border border-zinc-100 rounded-xl focus:ring-2 focus:ring-emerald-200"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-zinc-400 uppercase mb-1">Description</label>
+                  <textarea
+                    value={newOffer.description}
+                    onChange={e => setNewOffer({ ...newOffer, description: e.target.value })}
+                    className="w-full px-4 py-3 bg-zinc-50 border border-zinc-100 rounded-xl focus:ring-2 focus:ring-emerald-200 h-24"
+                    placeholder="Describe the offer..."
+                  />
+                </div>
+                <button
+                  onClick={createOffer}
+                  className="w-full py-4 bg-zinc-900 text-white rounded-2xl font-bold hover:bg-zinc-800 transition-colors"
+                >
+                  Publish Offer
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
+        {showMenuModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => setShowMenuModal(false)}
+              className="absolute inset-0 bg-zinc-900/60 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+              className="relative bg-white rounded-[2.5rem] p-8 w-full max-w-md shadow-2xl"
+            >
+              <h2 className="text-2xl font-bold mb-6">Update Today's Menu</h2>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-zinc-400 uppercase mb-1">Menu Content</label>
+                  <textarea
+                    value={newMenu}
+                    onChange={e => setNewMenu(e.target.value)}
+                    className="w-full px-4 py-3 bg-zinc-50 border border-zinc-100 rounded-xl focus:ring-2 focus:ring-orange-200 h-48"
+                    placeholder="e.g. Breakfast: Poha, Lunch: Dal Tadka..."
+                  />
+                </div>
+                <button
+                  onClick={() => updateMenu(messes[0].id)}
+                  className="w-full py-4 bg-orange-600 text-white rounded-2xl font-bold hover:bg-orange-700 transition-colors shadow-lg shadow-orange-200"
+                >
+                  Update Menu
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
+        {showListingModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => setShowListingModal(false)}
+              className="absolute inset-0 bg-zinc-900/60 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+              className="relative bg-white rounded-[2.5rem] p-8 w-full max-w-2xl shadow-2xl max-h-[90vh] overflow-y-auto"
+            >
+              <h2 className="text-2xl font-bold mb-6">Add New Property</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-xs font-bold text-zinc-400 uppercase mb-1">Property Name</label>
+                  <input
+                    type="text"
+                    value={newListing.name}
+                    onChange={e => setNewListing({ ...newListing, name: e.target.value })}
+                    className="w-full px-4 py-3 bg-zinc-50 border border-zinc-100 rounded-xl focus:ring-2 focus:ring-emerald-200"
+                    placeholder="e.g. Shree Ram PG"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-zinc-400 uppercase mb-1">Type</label>
+                  <select
+                    value={newListing.type}
+                    onChange={e => setNewListing({ ...newListing, type: e.target.value as any })}
+                    className="w-full px-4 py-3 bg-zinc-50 border border-zinc-100 rounded-xl focus:ring-2 focus:ring-emerald-200"
+                  >
+                    <option value="pg">PG</option>
+                    <option value="hostel">Hostel</option>
+                    <option value="flat">Flat</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-zinc-400 uppercase mb-1">Location</label>
+                  <input
+                    type="text"
+                    value={newListing.location}
+                    onChange={e => setNewListing({ ...newListing, location: e.target.value })}
+                    className="w-full px-4 py-3 bg-zinc-50 border border-zinc-100 rounded-xl focus:ring-2 focus:ring-emerald-200"
+                    placeholder="e.g. Koni Main Road"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-zinc-400 uppercase mb-1">Price (Monthly)</label>
+                  <input
+                    type="number"
+                    value={newListing.price}
+                    onChange={e => setNewListing({ ...newListing, price: parseInt(e.target.value) })}
+                    className="w-full px-4 py-3 bg-zinc-50 border border-zinc-100 rounded-xl focus:ring-2 focus:ring-emerald-200"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-zinc-400 uppercase mb-1">Contact Number</label>
+                  <input
+                    type="text"
+                    value={newListing.contact}
+                    onChange={e => setNewListing({ ...newListing, contact: e.target.value })}
+                    className="w-full px-4 py-3 bg-zinc-50 border border-zinc-100 rounded-xl focus:ring-2 focus:ring-emerald-200"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-zinc-400 uppercase mb-1">Amenities (comma separated)</label>
+                  <input
+                    type="text"
+                    value={newListing.amenities}
+                    onChange={e => setNewListing({ ...newListing, amenities: e.target.value })}
+                    className="w-full px-4 py-3 bg-zinc-50 border border-zinc-100 rounded-xl focus:ring-2 focus:ring-emerald-200"
+                    placeholder="WiFi, RO Water, Bed"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-bold text-zinc-400 uppercase mb-1">Description</label>
+                  <textarea
+                    value={newListing.description}
+                    onChange={e => setNewListing({ ...newListing, description: e.target.value })}
+                    className="w-full px-4 py-3 bg-zinc-50 border border-zinc-100 rounded-xl focus:ring-2 focus:ring-emerald-200 h-24"
+                  />
+                </div>
+              </div>
+              <button
+                onClick={createListing}
+                className="w-full mt-8 py-4 bg-emerald-600 text-white rounded-2xl font-bold hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-200"
+              >
+                Add Property
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Mess Modal */}
+      <AnimatePresence>
+        {showMessModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowMessModal(false)}
+              className="absolute inset-0 bg-orange-950/20 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative bg-white rounded-[2.5rem] p-8 max-w-lg w-full shadow-2xl overflow-y-auto max-h-[90vh]"
+            >
+              <div className="flex items-center justify-between mb-8">
+                <h3 className="text-2xl font-bold text-orange-950">Setup Your Kitchen</h3>
+                <button
+                  onClick={() => setShowMessModal(false)}
+                  className="p-2 hover:bg-orange-50 rounded-xl transition-colors text-orange-400"
+                >
+                  <XCircle className="w-6 h-6" />
+                </button>
+              </div>
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-[10px] font-bold text-orange-400 uppercase tracking-widest mb-2">Mess Name</label>
+                  <input
+                    type="text"
+                    className="w-full px-4 py-3 bg-zinc-50 border border-zinc-100 rounded-xl focus:ring-2 focus:ring-orange-200"
+                    value={newMess.name}
+                    onChange={e => setNewMess({ ...newMess, name: e.target.value })}
+                    placeholder="e.g. Anand Mess"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-orange-400 uppercase tracking-widest mb-2">Location</label>
+                  <input
+                    type="text"
+                    className="w-full px-4 py-3 bg-zinc-50 border border-zinc-100 rounded-xl focus:ring-2 focus:ring-orange-200"
+                    value={newMess.location}
+                    onChange={e => setNewMess({ ...newMess, location: e.target.value })}
+                    placeholder="e.g. Koni, Bilaspur"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-orange-400 uppercase tracking-widest mb-2">Price Per Month (₹)</label>
+                  <input
+                    type="number"
+                    className="w-full px-4 py-3 bg-zinc-50 border border-zinc-100 rounded-xl focus:ring-2 focus:ring-orange-200"
+                    value={newMess.price_per_month}
+                    onChange={e => setNewMess({ ...newMess, price_per_month: e.target.value })}
+                    placeholder="e.g. 3000"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-orange-400 uppercase tracking-widest mb-2">Initial Daily Menu</label>
+                  <input
+                    type="text"
+                    className="w-full px-4 py-3 bg-zinc-50 border border-zinc-100 rounded-xl focus:ring-2 focus:ring-orange-200"
+                    value={newMess.menu}
+                    onChange={e => setNewMess({ ...newMess, menu: e.target.value })}
+                    placeholder="e.g. Roti, Dal, Paneer"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-orange-400 uppercase tracking-widest mb-2">Image URL</label>
+                  <input
+                    type="text"
+                    className="w-full px-4 py-3 bg-zinc-50 border border-zinc-100 rounded-xl focus:ring-2 focus:ring-orange-200"
+                    value={newMess.image}
+                    onChange={e => setNewMess({ ...newMess, image: e.target.value })}
+                    placeholder="https://..."
+                  />
+                </div>
+              </div>
+              <button
+                onClick={async () => {
+                  const mess = await api.createMess({ ...newMess, owner_id: user?.id });
+                  if (mess) {
+                    setMesses([mess, ...messes]);
+                    setShowMessModal(false);
+                    setNewMess({ name: '', location: '', price_per_month: '', menu: '', image: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&q=80' });
+                  }
+                }}
+                className="w-full mt-8 py-4 bg-orange-600 text-white rounded-2xl font-bold hover:bg-orange-700 transition-colors shadow-lg shadow-orange-200"
+              >
+                Register Kitchen
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
 }
