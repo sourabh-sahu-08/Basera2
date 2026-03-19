@@ -17,6 +17,7 @@ export interface Listing {
   terms: string;
   contact: string;
   amenities: string;
+  gender?: 'male' | 'female' | 'unisex';
 }
 
 export interface Mess {
@@ -35,7 +36,13 @@ export interface Booking {
   id: number;
   student_id: number;
   listing_id: number;
-  status: 'pending' | 'confirmed' | 'cancelled';
+  status: 'pending' | 'pending_verification' | 'confirmed' | 'rejected' | 'cancelled';
+  contact_number?: string;
+  move_in_date?: string;
+  duration_months?: number;
+  aadhar_card_url?: string;
+  college_id_url?: string;
+  declaration_url?: string;
   booking_date: string;
   student_name?: string;
   property_name?: string;

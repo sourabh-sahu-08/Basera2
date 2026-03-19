@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useUser } from '../context/UserContext';
 import { Listing, Mess, Booking, Subscription, Offer } from '../types';
 import {
-  Building2, MapPin, Star, Heart, Activity, User as UserIcon, LogOut, ChevronRight, CheckCircle, Clock, ShieldCheck, Camera, Check, ChefHat, Trash2, Home, Utensils, Calendar, Settings, Bell, TrendingUp, Users, Coffee, Menu, Search, Filter, Mail, Phone, Lock, Eye, EyeOff, LayoutDashboard, CalendarDays, Key, CreditCard, Tag, FileText, ArrowUpRight, Copy, ExternalLink, Plus, Map, PlayCircle, MessageCircle, Info, ChevronDown, Award, Globe, HeartPulse, XCircle, FilePlus, GraduationCap
+  Building2, MapPin, Star, Heart, Activity, User as UserIcon, LogOut, ChevronRight, CheckCircle, Clock, ShieldCheck, Camera, Check, ChefHat, Trash2, Home, Utensils, Calendar, Settings, Bell, TrendingUp, Users, Coffee, Menu, Search, Filter, Mail, Phone, Lock, Eye, EyeOff, LayoutDashboard, CalendarDays, Key, CreditCard, Tag, FileText, ArrowUpRight, Copy, ExternalLink, Plus, Map, PlayCircle, MessageCircle, Info, ChevronDown, Award, Globe, HeartPulse, XCircle, FilePlus, GraduationCap, UploadCloud, X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
@@ -32,7 +32,8 @@ export default function Dashboard() {
     description: '',
     terms: '',
     contact: '',
-    amenities: ''
+    amenities: '',
+    gender: 'unisex' as 'male' | 'female' | 'unisex'
   });
   const [newOffer, setNewOffer] = useState({
     title: '',
@@ -42,6 +43,26 @@ export default function Dashboard() {
     target_id: 0,
     expiry_date: ''
   });
+
+  const [listingImages, setListingImages] = useState<File[]>([]);
+
+  const handleListingFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const files = Array.from(e.target.files);
+      const validFiles = files.filter(f => {
+        const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
+        return allowedTypes.includes(f.type) && f.size <= 5 * 1024 * 1024;
+      });
+      if (validFiles.length !== files.length) {
+        alert("Some files were rejected. Only JPG/PNG/PDF under 5MB are allowed.");
+      }
+      setListingImages(prev => [...prev, ...validFiles]);
+    }
+  };
+
+  const removeListingImage = (index: number) => {
+    setListingImages(prev => prev.filter((_, i) => i !== index));
+  };
 
   useEffect(() => {
     if (!user) {
@@ -124,13 +145,39 @@ export default function Dashboard() {
   };
 
   const createListing = async () => {
+    if (listingImages.length < 4) {
+      alert("Please upload at least 4 property images.");
+      return;
+    }
     try {
-      const data = await api.createListing({ ...newListing, owner_id: user?.id });
+      const formData = new FormData();
+      formData.append('owner_id', user?.id.toString() || '');
+      formData.append('type', newListing.type);
+      formData.append('name', newListing.name);
+      formData.append('location', newListing.location);
+      formData.append('price', newListing.price.toString());
+      formData.append('description', newListing.description);
+      formData.append('terms', newListing.terms);
+      formData.append('contact', newListing.contact);
+      formData.append('amenities', newListing.amenities);
+      formData.append('gender', newListing.gender || 'unisex');
+      
+      listingImages.forEach((file) => {
+        formData.append('images', file);
+      });
+
+      const data = await api.createListing(formData);
       if (data.id) {
-        setListings(prev => [...prev, { ...newListing, id: data.id, owner_id: user!.id }]);
+        const listingsData = await api.fetchOwnerListings(user!.id);
+        setListings(listingsData);
         setShowListingModal(false);
+        setListingImages([]);
+        setNewListing({
+          type: 'pg', name: '', location: '', price: 0, image: '', description: '', terms: '', contact: '', amenities: '', gender: 'unisex'
+        });
       }
-    } catch (err) {
+    } catch (err: any) {
+      alert(err.message);
       console.error(err);
     }
   };
@@ -142,6 +189,17 @@ export default function Dashboard() {
       if (success) {
         setListings(prev => prev.filter(l => l.id !== id));
       }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const deleteBookingAndResubmit = async (id: number) => {
+    if (!confirm('Are you sure you want to cancel this rejected booking and resubmit?')) return;
+    try {
+      await api.deleteBooking(id);
+      setBookings(prev => prev.filter(b => b.id !== id));
+      navigate('/');
     } catch (err) {
       console.error(err);
     }
@@ -229,7 +287,7 @@ export default function Dashboard() {
                         <div className="relative h-40 rounded-[1.5rem] overflow-hidden mb-6">
                           <img src={b.image} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
                           <div className="absolute top-3 right-3 px-3 py-1 bg-white/90 backdrop-blur-md rounded-xl text-[9px] font-black text-brand-700 border border-white/50 uppercase tracking-widest">
-                            {b.status}
+                            {b.status === 'pending_verification' ? 'Pending Verif.' : b.status}
                           </div>
                         </div>
                         <h3 className="text-xl font-extrabold text-zinc-900 mb-1">{b.property_name}</h3>
@@ -238,9 +296,16 @@ export default function Dashboard() {
                         </div>
                         <div className="flex items-center justify-between pt-4 border-t border-zinc-50">
                           <span className="text-brand-600 font-black text-lg">₹{b.price}<span className="text-[10px] font-bold opacity-60">/mo</span></span>
-                          <button className="w-10 h-10 bg-zinc-900 text-white rounded-xl flex items-center justify-center hover:bg-brand-600 transition-colors shadow-lg">
-                            <Search className="w-4 h-4" />
-                          </button>
+                          <div className="flex items-center gap-2">
+                            {b.status === 'rejected' && (
+                              <button onClick={() => deleteBookingAndResubmit(b.id)} className="px-3 h-10 bg-red-50 text-red-600 rounded-xl text-xs font-bold hover:bg-red-100 transition-colors">
+                                Resubmit
+                              </button>
+                            )}
+                            <button className="w-10 h-10 bg-zinc-900 text-white rounded-xl flex items-center justify-center hover:bg-brand-600 transition-colors shadow-lg">
+                              <Search className="w-4 h-4" />
+                            </button>
+                          </div>
                         </div>
                       </motion.div>
                     ))}
@@ -454,7 +519,7 @@ export default function Dashboard() {
               <section>
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-2xl font-black text-emerald-950">Student Requests</h2>
-                  <span className="px-3 py-1 bg-emerald-100 text-emerald-700 text-[10px] font-bold rounded-full">{bookings.length} Pending</span>
+                  <span className="px-3 py-1 bg-emerald-100 text-emerald-700 text-[10px] font-bold rounded-full">{bookings.filter(b => b.status === 'pending_verification').length} Pending</span>
                 </div>
 
                 <div className="bg-white rounded-[2.5rem] border border-emerald-100 shadow-sm overflow-hidden">
@@ -483,17 +548,23 @@ export default function Dashboard() {
                             <td className="px-8 py-5 text-xs text-emerald-400">{new Date(b.booking_date).toLocaleDateString()}</td>
                             <td className="px-8 py-5 text-right">
                               <div className="flex justify-end gap-2">
-                                {b.status === 'pending' ? (
+                                {b.status === 'pending_verification' || b.status === 'pending' ? (
                                   <>
+                                    <a href={b.aadhar_card_url} target="_blank" rel="noreferrer" title="Aadhar" className="p-2 text-blue-500 hover:bg-blue-50 rounded-xl transition-colors"><FileText className="w-5 h-5"/></a>
+                                    <a href={b.college_id_url} target="_blank" rel="noreferrer" title="College ID" className="p-2 text-indigo-500 hover:bg-indigo-50 rounded-xl transition-colors"><FileText className="w-5 h-5"/></a>
+                                    <a href={b.declaration_url} target="_blank" rel="noreferrer" title="Declaration" className="p-2 text-purple-500 hover:bg-purple-50 rounded-xl transition-colors"><FileText className="w-5 h-5"/></a>
+                                    
                                     <button
                                       onClick={() => updateBookingStatus(b.id, 'confirmed')}
                                       className="p-2 text-emerald-600 hover:bg-emerald-100 rounded-xl transition-colors"
+                                      title="Approve"
                                     >
                                       <CheckCircle className="w-5 h-5" />
                                     </button>
                                     <button
-                                      onClick={() => updateBookingStatus(b.id, 'cancelled')}
+                                      onClick={() => updateBookingStatus(b.id, 'rejected')}
                                       className="p-2 text-red-400 hover:bg-red-50 rounded-xl transition-colors"
+                                      title="Reject"
                                     >
                                       <XCircle className="w-5 h-5" />
                                     </button>
@@ -856,6 +927,18 @@ export default function Dashboard() {
                   </select>
                 </div>
                 <div>
+                  <label className="block text-xs font-bold text-zinc-400 uppercase mb-1">Preferred Gender</label>
+                  <select
+                    value={newListing.gender}
+                    onChange={e => setNewListing({ ...newListing, gender: e.target.value as any })}
+                    className="w-full px-4 py-3 bg-zinc-50 border border-zinc-100 rounded-xl focus:ring-2 focus:ring-emerald-200"
+                  >
+                    <option value="unisex">Unisex / Anyone</option>
+                    <option value="male">Boys Only</option>
+                    <option value="female">Girls Only</option>
+                  </select>
+                </div>
+                <div>
                   <label className="block text-xs font-bold text-zinc-400 uppercase mb-1">Location</label>
                   <input
                     type="text"
@@ -900,6 +983,27 @@ export default function Dashboard() {
                     onChange={e => setNewListing({ ...newListing, description: e.target.value })}
                     className="w-full px-4 py-3 bg-zinc-50 border border-zinc-100 rounded-xl focus:ring-2 focus:ring-emerald-200 h-24"
                   />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-bold text-zinc-400 uppercase mb-2">Property Images (Min 4. JPG/PNG. Max 5MB)</label>
+                  <div className="border-2 border-dashed border-emerald-200 rounded-2xl p-6 text-center hover:bg-emerald-50 transition-colors relative cursor-pointer group">
+                    <input type="file" multiple accept=".jpg,.jpeg,.png,.pdf" onChange={handleListingFileChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
+                    <UploadCloud className="w-8 h-8 text-emerald-400 mx-auto mb-2 group-hover:text-emerald-500 transition-colors" />
+                    <p className="text-sm font-bold text-emerald-700">Click or drag files here to upload</p>
+                    <p className="text-xs text-emerald-500 mt-1">{listingImages.length} files selected</p>
+                  </div>
+                  {listingImages.length > 0 && (
+                    <div className="flex flex-wrap gap-3 mt-4">
+                      {listingImages.map((file, idx) => (
+                        <div key={idx} className="relative w-24 h-24 rounded-xl overflow-hidden border border-zinc-200 group/image">
+                          <img src={URL.createObjectURL(file)} alt="" className="w-full h-full object-cover" />
+                          <button onClick={() => removeListingImage(idx)} className="absolute top-1 right-1 bg-white/90 rounded-full p-1 opacity-100 transition-opacity hover:bg-red-50">
+                            <X className="w-4 h-4 text-red-500" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
               <button

@@ -52,7 +52,13 @@ export function initDb() {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       student_id INTEGER,
       listing_id INTEGER,
-      status TEXT DEFAULT 'pending', -- 'pending', 'confirmed', 'cancelled'
+      status TEXT DEFAULT 'pending_verification', -- 'pending', 'pending_verification', 'confirmed', 'rejected', 'cancelled'
+      contact_number TEXT,
+      move_in_date DATE,
+      duration_months INTEGER,
+      aadhar_card_url TEXT,
+      college_id_url TEXT,
+      declaration_url TEXT,
       booking_date DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY(student_id) REFERENCES users(id),
       FOREIGN KEY(listing_id) REFERENCES listings(id)
@@ -80,6 +86,35 @@ export function initDb() {
       FOREIGN KEY(owner_id) REFERENCES users(id)
     );
   `);
+
+  // Migration for bookings table to add new columns if they don't exist
+  try {
+    const tableInfo = db.prepare("PRAGMA table_info(bookings)").all() as any[];
+    const columns = tableInfo.map((c: any) => c.name);
+    if (!columns.includes('contact_number')) {
+      db.exec(`
+        ALTER TABLE bookings ADD COLUMN contact_number TEXT;
+        ALTER TABLE bookings ADD COLUMN move_in_date DATE;
+        ALTER TABLE bookings ADD COLUMN duration_months INTEGER;
+        ALTER TABLE bookings ADD COLUMN aadhar_card_url TEXT;
+        ALTER TABLE bookings ADD COLUMN college_id_url TEXT;
+        ALTER TABLE bookings ADD COLUMN declaration_url TEXT;
+      `);
+    }
+  } catch (e) {
+    console.error("Migration failed:", e);
+  }
+
+  // Migration for listings table to add gender column
+  try {
+    const tableInfo = db.prepare("PRAGMA table_info(listings)").all() as any[];
+    const columns = tableInfo.map((c: any) => c.name);
+    if (!columns.includes('gender')) {
+      db.exec(`ALTER TABLE listings ADD COLUMN gender TEXT DEFAULT 'unisex'`);
+    }
+  } catch (e) {
+    console.error("Listings Migration failed:", e);
+  }
 
   // Seed data if empty
   const userCount = db.prepare("SELECT count(*) as count FROM users").get() as { count: number };

@@ -68,6 +68,13 @@ export const api = {
     return res.ok;
   },
 
+  async deleteBooking(id: number): Promise<boolean> {
+    const res = await fetch(`/api/bookings/${id}`, {
+      method: 'DELETE'
+    });
+    return res.ok;
+  },
+
   async updateMenu(messId: number, menu: string): Promise<boolean> {
     const res = await fetch(`/api/messes/${messId}/menu`, {
       method: 'PUT',
@@ -77,12 +84,15 @@ export const api = {
     return res.ok;
   },
 
-  async createListing(listing: any): Promise<{ id: number }> {
+  async createListing(formData: FormData): Promise<{ id: number }> {
     const res = await fetch('/api/listings', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(listing)
+      body: formData
     });
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.error || 'Failed to create listing');
+    }
     return res.json();
   },
 
@@ -107,6 +117,12 @@ export const api = {
     return res.json();
   },
 
+  async fetchListingById(id: string | number): Promise<Listing> {
+    const res = await fetch(`/api/listings/${id}`);
+    if (!res.ok) throw new Error('Listing not found');
+    return res.json();
+  },
+
   async fetchMesses(): Promise<Mess[]> {
     const res = await fetch('/api/messes');
     return res.json();
@@ -125,8 +141,20 @@ export const api = {
     const res = await fetch('/api/bookings', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ student_id: studentId, listing_id: listingId })
+      body: JSON.stringify({ student_id: studentId, listing_id: listingId }),
     });
+    return res.json();
+  },
+
+  async createSecureBooking(formData: FormData): Promise<{ id: number }> {
+    const res = await fetch('/api/bookings/secure', {
+      method: 'POST',
+      body: formData,
+    });
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.error || 'Failed to create secure booking');
+    }
     return res.json();
   },
 

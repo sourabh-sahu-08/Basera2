@@ -9,6 +9,8 @@ import Login from './pages/Login';
 import Roomies from './pages/Roomies';
 import RentLogs from './pages/RentLogs';
 import KoniGuide from './pages/KoniGuide';
+import BookingPage from './pages/BookingPage';
+import ListingDetails from './pages/ListingDetails';
 import { UserProvider } from './context/UserContext';
 
 export default function App() {
@@ -24,6 +26,8 @@ export default function App() {
               <Route path="/about" element={<About />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/login" element={<Login />} />
+              <Route path="/book/:id" element={<BookingPage />} />
+              <Route path="/property/:id" element={<ListingDetails />} />
               <Route path="/roomies" element={<Roomies />} />
               <Route path="/rent-logs" element={<RentLogs />} />
               <Route path="/guide" element={<KoniGuide />} />

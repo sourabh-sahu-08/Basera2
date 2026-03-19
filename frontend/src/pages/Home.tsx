@@ -9,6 +9,7 @@ export default function Home() {
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
+  const [genderFilter, setGenderFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
@@ -21,9 +22,10 @@ export default function Home() {
 
   const filteredListings = listings.filter(l => {
     const matchesFilter = filter === 'all' || l.type === filter;
-    const matchesSearch = l.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      l.location.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesFilter && matchesSearch;
+    const matchesGender = genderFilter === 'all' || l.gender === genderFilter;
+    const matchesSearch = (l.name || '').toLowerCase().includes((searchQuery || '').toLowerCase()) ||
+      (l.location || '').toLowerCase().includes((searchQuery || '').toLowerCase());
+    return matchesFilter && matchesGender && matchesSearch;
   });
 
   return (
@@ -98,6 +100,29 @@ export default function Home() {
               </div>
             </div>
           </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="flex justify-center mt-6"
+          >
+            <div className="flex items-center gap-1.5 p-1.5 bg-white/60 backdrop-blur-md rounded-2xl shadow-sm border border-zinc-200/50">
+              {['all', 'male', 'female', 'unisex'].map((g) => (
+                <button
+                  key={g}
+                  onClick={() => setGenderFilter(g)}
+                  className={`px-5 py-2 rounded-xl text-xs font-extrabold uppercase tracking-wide transition-all ${genderFilter === g
+                    ? 'bg-zinc-900 text-white shadow-md'
+                    : 'text-zinc-500 hover:text-zinc-900 hover:bg-white'
+                    }`}
+                >
+                  {g === 'all' ? 'Any Gender' : g === 'male' ? 'Boys Only' : g === 'female' ? 'Girls Only' : 'Unisex'}
+                </button>
+              ))}
+            </div>
+          </motion.div>
+
         </div>
       </div>
 
