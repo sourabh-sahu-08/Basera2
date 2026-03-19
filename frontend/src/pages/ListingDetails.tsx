@@ -2,9 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Listing } from '../types';
 import { api } from '../services/api';
-import { MapPin, CheckCircle2, Phone, Copy, BookmarkPlus, Check, ArrowLeft } from 'lucide-react';
+import { MapPin, CheckCircle2, Phone, Copy, BookmarkPlus, Check, ArrowLeft, MessageCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useUser } from '../context/UserContext';
+import ChatBox from '../components/ChatBox';
 
 export default function ListingDetails() {
   const { id } = useParams<{ id: string }>();
@@ -14,6 +15,7 @@ export default function ListingDetails() {
   const [loading, setLoading] = useState(true);
   const [showNumber, setShowNumber] = useState(false);
   const [isBooked, setIsBooked] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -171,6 +173,20 @@ export default function ListingDetails() {
                 <span>{isBooked ? 'Request Sent' : 'Book Now'}</span>
               </button>
 
+              <button
+                onClick={() => {
+                  if (!user) {
+                    navigate('/login');
+                    return;
+                  }
+                  setIsChatOpen(true);
+                }}
+                className="w-full flex items-center justify-center space-x-2 bg-emerald-50 text-emerald-700 px-6 py-4 rounded-2xl text-sm font-black uppercase tracking-widest hover:bg-emerald-100 transition-colors"
+              >
+                <MessageCircle className="w-5 h-5" />
+                <span>Chat with Owner</span>
+              </button>
+
               <AnimatePresence mode="wait">
                 {!showNumber ? (
                   <motion.button
@@ -211,6 +227,17 @@ export default function ListingDetails() {
           </div>
         </div>
       </div>
+      {/* ChatBox Modal */}
+      {user && listing && (
+        <ChatBox 
+          listingId={listing.id}
+          currentUserId={user.id}
+          targetUserId={listing.owner_id}
+          targetUserName={listing.name || 'Property Owner'}
+          isOpen={isChatOpen}
+          onClose={() => setIsChatOpen(false)}
+        />
+      )}
     </div>
   );
 }

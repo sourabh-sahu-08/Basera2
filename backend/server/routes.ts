@@ -275,4 +275,58 @@ router.delete("/bookings/:id", (req, res) => {
   res.json({ success: true });
 });
 
+// Messages
+router.get("/messages/:listing_id/:user1/:user2", (req, res) => {
+  const listingId = parseInt(req.params.listing_id, 10);
+  const user1 = parseInt(req.params.user1, 10);
+  const user2 = parseInt(req.params.user2, 10);
+  
+  const messages = db.prepare(`
+    SELECT * FROM messages 
+    WHERE listing_id = ? 
+    AND ((sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?))
+    ORDER BY created_at ASC
+  `).all(listingId, user1, user2, user2, user1);
+  
+  res.json(messages);
+});
+
+router.get("/conversations/:user_id", (req, res) => {
+  const userId = parseInt(req.params.user_id, 10);
+  
+  // Gets all distinct conversations for an owner (or student if they have multiple)
+  // This uses a subquery to get the latest message content and timestamp
+  const conversations = db.prepare(`
+    SELECT 
+      m.listing_id,
+      l.name as listing_name,
+      l.owner_id,
+      CASE WHEN m.sender_id = ? THEN m.receiver_id ELSE m.sender_id END as student_id,
+      u.full_name as student_name,
+      MAX(m.created_at) as last_message_date,
+      (SELECT content FROM messages m2 WHERE m2.listing_id = m.listing_id 
+        AND (m2.sender_id = u.id OR m2.receiver_id = u.id) 
+        ORDER BY created_at DESC LIMIT 1) as last_message
+    FROM messages m
+    JOIN listings l ON m.listing_id = l.id
+    JOIN users u ON u.id = CASE WHEN m.sender_id = ? THEN m.receiver_id ELSE m.sender_id END
+    WHERE l.owner_id = ? OR m.sender_id = ? OR m.receiver_id = ?
+    GROUP BY m.listing_id, student_id
+    ORDER BY last_message_date DESC
+  `).all(userId, userId, userId, userId, userId);
+  
+  res.json(conversations);
+});
+
+router.post("/messages", (req, res) => {
+  const { listing_id, sender_id, receiver_id, content } = req.body;
+  const info = db.prepare(`
+    INSERT INTO messages (listing_id, sender_id, receiver_id, content)
+    VALUES (?, ?, ?, ?)
+  `).run(listing_id, sender_id, receiver_id, content);
+  
+  const newMessage = db.prepare("SELECT * FROM messages WHERE id = ?").get(info.lastInsertRowid);
+  res.json(newMessage);
+});
+
 export default router;

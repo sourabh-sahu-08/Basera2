@@ -74,3 +74,22 @@ export interface Offer {
   discount_percent: number;
   expiry_date: string;
 }
+
+export interface Message {
+  id: number;
+  listing_id: number;
+  sender_id: number;
+  receiver_id: number;
+  content: string;
+  created_at: string;
+}
+
+export interface Conversation {
+  listing_id: number;
+  listing_name: string;
+  owner_id: number;
+  student_id: number;
+  student_name: string;
+  last_message_date: string;
+  last_message: string;
+}

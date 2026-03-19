@@ -85,6 +85,18 @@ export function initDb() {
       expiry_date DATE,
       FOREIGN KEY(owner_id) REFERENCES users(id)
     );
+
+    CREATE TABLE IF NOT EXISTS messages (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      listing_id INTEGER,
+      sender_id INTEGER,
+      receiver_id INTEGER,
+      content TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY(listing_id) REFERENCES listings(id),
+      FOREIGN KEY(sender_id) REFERENCES users(id),
+      FOREIGN KEY(receiver_id) REFERENCES users(id)
+    );
   `);
 
   // Migration for bookings table to add new columns if they don't exist
