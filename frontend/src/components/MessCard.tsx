@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Mess } from '../types';
-import { MapPin, Phone, UtensilsCrossed, Check, Sparkles } from 'lucide-react';
+import { MapPin, Phone, UtensilsCrossed, Check, Sparkles, ChevronDown, ChevronUp, Calendar } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useUser } from '../context/UserContext';
 import { useNavigate } from 'react-router-dom';
@@ -12,27 +12,44 @@ interface Props {
 
 export default function MessCard({ mess }: Props) {
   const [isSubscribed, setIsSubscribed] = useState(false);
+  const [showWeekly, setShowWeekly] = useState(false);
   const { user } = useUser();
   const navigate = useNavigate();
 
-  const handleSubscribe = async () => {
-    if (!user) {
-      navigate('/login');
-      return;
-    }
-    if (user.role !== 'student') {
-      alert('Please switch to a Student role to subscribe.');
-      return;
-    }
+  const DAYS = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
+  const TODAY = DAYS[new Date().getDay() === 0 ? 6 : new Date().getDay() - 1];
 
+  // Parse weekly menu JSON
+  let menuObj: Record<string, string> = {};
+  try {
+    const parsed = JSON.parse(mess.menu);
+    menuObj = typeof parsed === 'object' && parsed !== null ? parsed : { monday: mess.menu };
+  } catch {
+    menuObj = { monday: mess.menu };
+  }
+  const todayMenu = menuObj[TODAY] || "Chef's Special";
+
+  // Process image path
+  const processImg = (img: string) => {
+    if (!img) return '/placeholder.jpg';
+    if (!img.startsWith('http') && !img.startsWith('/')) return '/uploads/' + img;
+    return img;
+  };
+  let displayImage = mess.image;
+  try {
+    const parsed = JSON.parse(mess.image);
+    displayImage = Array.isArray(parsed) && parsed.length > 0 ? processImg(parsed[0]) : processImg(String(parsed));
+  } catch {
+    displayImage = processImg(mess.image);
+  }
+
+  const handleSubscribe = async () => {
+    if (!user) { navigate('/login'); return; }
+    if (user.role !== 'student') { alert('Please switch to a Student role to subscribe.'); return; }
     try {
       const data = await api.createSubscription(user.id, mess.id);
-      if (data.id) {
-        setIsSubscribed(true);
-      }
-    } catch (err) {
-      console.error(err);
-    }
+      if (data.id) setIsSubscribed(true);
+    } catch (err) { console.error(err); }
   };
 
   return (
@@ -45,7 +62,7 @@ export default function MessCard({ mess }: Props) {
       <div className="flex flex-col md:flex-row gap-8">
         <div className="w-full md:w-64 h-64 rounded-[2rem] overflow-hidden shrink-0 relative">
           <img
-            src={mess.image}
+            src={displayImage}
             alt={mess.name}
             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000"
             referrerPolicy="no-referrer"
@@ -77,14 +94,35 @@ export default function MessCard({ mess }: Props) {
             "{mess.description}"
           </p>
 
-          <div className="bg-orange-50/50 rounded-2xl p-5 mb-8 border border-orange-100/30 group-hover:bg-orange-50 transition-colors">
-            <div className="flex items-center text-orange-700 text-[10px] font-black uppercase tracking-widest mb-3">
+          {/* Weekly Menu Block */}
+          <div className="bg-orange-50/50 rounded-2xl p-5 mb-4 border border-orange-100/30 group-hover:bg-orange-50 transition-colors">
+            <div className="flex items-center text-orange-700 text-[10px] font-black uppercase tracking-widest mb-2">
               <UtensilsCrossed className="w-3.5 h-3.5 mr-2" />
-              Kitchen Special Today
+              Today's Special — <span className="capitalize ml-1">{TODAY}</span>
             </div>
-            <p className="text-zinc-900 text-base font-bold leading-relaxed px-1">
-              {mess.menu}
+            <p className="text-zinc-900 text-base font-bold leading-relaxed px-1 mb-4">
+              {todayMenu}
             </p>
+
+            <button
+              onClick={() => setShowWeekly(v => !v)}
+              className="flex items-center gap-2 text-[10px] font-black text-orange-600 uppercase tracking-widest hover:text-orange-800 transition-colors"
+            >
+              <Calendar className="w-3.5 h-3.5" />
+              {showWeekly ? 'Hide' : 'View'} Weekly Schedule
+              {showWeekly ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+            </button>
+
+            {showWeekly && (
+              <div className="mt-3 space-y-1.5 border-t border-orange-100 pt-3">
+                {DAYS.map(day => (
+                  <div key={day} className={`flex items-start gap-3 p-2 rounded-xl ${day === TODAY ? 'bg-orange-100 border border-orange-200' : ''}`}>
+                    <span className={`text-[10px] font-black uppercase tracking-widest w-10 shrink-0 mt-0.5 ${day === TODAY ? 'text-orange-600' : 'text-orange-400'}`}>{day.slice(0,3)}</span>
+                    <span className={`text-xs leading-snug ${day === TODAY ? 'font-bold text-orange-900' : 'text-zinc-500'}`}>{menuObj[day] || '—'}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="flex gap-4 mt-auto">

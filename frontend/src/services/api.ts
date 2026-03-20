@@ -129,10 +129,11 @@ export const api = {
   },
 
   async createMess(messData: any): Promise<Mess> {
+    const isFormData = messData instanceof FormData;
     const res = await fetch('/api/messes', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(messData)
+      headers: isFormData ? undefined : { 'Content-Type': 'application/json' },
+      body: isFormData ? messData : JSON.stringify(messData)
     });
     return res.json();
   },

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useUser } from '../context/UserContext';
 import { motion, AnimatePresence } from 'motion/react';
-import { User as UserIcon, ShieldCheck, GraduationCap, ChefHat, ArrowRight, Lock, Mail, UserPlus, LogIn, AlertCircle } from 'lucide-react';
+import { User as UserIcon, ShieldCheck, GraduationCap, ChefHat, ArrowRight, Lock, Mail, Phone, UserPlus, LogIn, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 
@@ -11,7 +11,8 @@ export default function Login() {
   const [isLogin, setIsLogin] = useState(true);
   const [selectedRole, setSelectedRole] = useState<'student' | 'owner' | 'mess_owner'>('student');
   const [formData, setFormData] = useState({
-    username: '',
+    email: '',
+    phone_number: '',
     password: '',
     full_name: ''
   });
@@ -49,7 +50,7 @@ export default function Login() {
 
     try {
       if (isLogin) {
-        const res = await api.login({ username: formData.username, password: formData.password });
+        const res = await api.login({ email: formData.email, password: formData.password });
         if (res.success && res.user) {
           setUser(res.user);
           navigate('/dashboard');
@@ -63,7 +64,8 @@ export default function Login() {
           return;
         }
         const res = await api.signup({
-          username: formData.username,
+          email: formData.email,
+          phone_number: formData.phone_number,
           password: formData.password,
           full_name: formData.full_name,
           role: selectedRole
@@ -150,21 +152,37 @@ export default function Login() {
                       />
                     </div>
                   </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-bold text-zinc-700 px-1">Phone Number</label>
+                    <div className="relative group">
+                      <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-400 group-focus-within:text-brand-500 transition-colors" />
+                      <input
+                        type="tel"
+                        name="phone_number"
+                        required={!isLogin}
+                        value={formData.phone_number}
+                        onChange={handleInputChange}
+                        placeholder="1234567890"
+                        className="w-full pl-12 pr-4 py-3.5 bg-zinc-50 border border-zinc-200 rounded-2xl focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all font-medium text-zinc-900"
+                      />
+                    </div>
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
 
             <div className="space-y-1.5">
-              <label className="text-sm font-bold text-zinc-700 px-1">Username</label>
+              <label className="text-sm font-bold text-zinc-700 px-1">Email Address</label>
               <div className="relative group">
                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-400 group-focus-within:text-brand-500 transition-colors" />
                 <input
-                  type="text"
-                  name="username"
+                  type="email"
+                  name="email"
                   required
-                  value={formData.username}
+                  value={formData.email}
                   onChange={handleInputChange}
-                  placeholder="student123"
+                  placeholder="student@example.com"
                   className="w-full pl-12 pr-4 py-3.5 bg-zinc-50 border border-zinc-200 rounded-2xl focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all font-medium text-zinc-900"
                 />
               </div>

@@ -28,16 +28,8 @@ async function startServer() {
   // API Routes
   app.use("/api", apiRoutes);
 
-  // Vite middleware for development
-  if (process.env.NODE_ENV !== "production") {
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: "spa",
-      root: path.resolve(__dirname, "../../frontend"),
-    });
-    app.use(vite.middlewares);
-  } else {
-    // Production static files
+  // Production static files
+  if (process.env.NODE_ENV === "production" || process.env.SERVE_STATIC === "true") {
     const distPath = path.resolve(__dirname, "../../frontend/dist");
     app.use(express.static(distPath));
     app.get("*", (req, res) => {

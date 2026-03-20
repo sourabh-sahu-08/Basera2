@@ -24,8 +24,11 @@ export default function Dashboard() {
   const [showMenuModal, setShowMenuModal] = useState(false);
   const [showMessModal, setShowMessModal] = useState(false);
   const [showListingModal, setShowListingModal] = useState(false);
-  const [newMenu, setNewMenu] = useState('');
-  const [newMess, setNewMess] = useState({ name: '', location: '', price_per_month: '', menu: '', image: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&q=80' });
+  const [newMenu, setNewMenu] = useState<Record<string, string>>({ monday: '', tuesday: '', wednesday: '', thursday: '', friday: '', saturday: '', sunday: '' });
+  const [newMess, setNewMess] = useState({ name: '', location: '', price_per_month: '', menu: '' });
+  const [messImages, setMessImages] = useState<File[]>([]);
+  const [fssaiLicense, setFssaiLicense] = useState<File | null>(null);
+  const [ownerAadhar, setOwnerAadhar] = useState<File | null>(null);
   const [newListing, setNewListing] = useState({
     type: 'pg' as 'pg' | 'hostel' | 'flat',
     name: '',
@@ -67,6 +70,17 @@ export default function Dashboard() {
     setListingImages(prev => prev.filter((_, i) => i !== index));
   };
 
+  const getDisplayImage = (img: string) => {
+    if (!img) return '/placeholder.jpg';
+    try {
+      const parsed = JSON.parse(img);
+      let p = Array.isArray(parsed) && parsed.length > 0 ? parsed[0] : String(parsed);
+      return (!p.startsWith('http') && !p.startsWith('/')) ? '/uploads/' + p : p;
+    } catch (e) {
+      return (!img.startsWith('http') && !img.startsWith('/')) ? '/uploads/' + img : img;
+    }
+  };
+
   useEffect(() => {
     if (!user) {
       navigate('/login');
@@ -95,7 +109,12 @@ export default function Dashboard() {
           ]);
           setMesses(messesData);
           setSubscriptions(subsData);
-          if (messesData.length > 0) setNewMenu(messesData[0].menu);
+          if (messesData.length > 0) {
+            try {
+              const parsed = JSON.parse(messesData[0].menu);
+              setNewMenu(typeof parsed === 'object' && parsed !== null ? parsed : { monday: messesData[0].menu, tuesday: '', wednesday: '', thursday: '', friday: '', saturday: '', sunday: '' });
+            } catch { setNewMenu({ monday: messesData[0].menu, tuesday: '', wednesday: '', thursday: '', friday: '', saturday: '', sunday: '' }); }
+          }
         } else if (user.role === 'student') {
           const [bookingsData, subsData] = await Promise.all([
             api.fetchStudentBookings(user.id),
@@ -127,9 +146,9 @@ export default function Dashboard() {
 
   const updateMenu = async (messId: number) => {
     try {
-      const success = await api.updateMenu(messId, newMenu);
+      const success = await api.updateMenu(messId, JSON.stringify(newMenu));
       if (success) {
-        setMesses(prev => prev.map(m => m.id === messId ? { ...m, menu: newMenu } : m));
+        setMesses(prev => prev.map(m => m.id === messId ? { ...m, menu: JSON.stringify(newMenu) } : m));
         setShowMenuModal(false);
       }
     } catch (err) {
@@ -290,7 +309,7 @@ export default function Dashboard() {
                         className="glass-card rounded-[2rem] p-4 group"
                       >
                         <div className="relative h-40 rounded-[1.5rem] overflow-hidden mb-6">
-                          <img src={b.image} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                          <img src={getDisplayImage(b.image)} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
                           <div className="absolute top-3 right-3 px-3 py-1 bg-white/90 backdrop-blur-md rounded-xl text-[9px] font-black text-brand-700 border border-white/50 uppercase tracking-widest">
                             {b.status === 'pending_verification' ? 'Pending Verif.' : b.status}
                           </div>
@@ -628,7 +647,7 @@ export default function Dashboard() {
                   {listings.map(listing => (
                     <div key={listing.id} className="bg-white rounded-[2rem] p-4 border border-emerald-100 shadow-sm flex gap-6 group">
                       <div className="w-32 h-32 rounded-2xl overflow-hidden shrink-0">
-                        <img src={listing.image} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                        <img src={getDisplayImage(listing.image)} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                       </div>
                       <div className="flex-1 py-2">
                         <h3 className="font-bold text-emerald-950 mb-1">{listing.name}</h3>
@@ -725,22 +744,34 @@ export default function Dashboard() {
                   </div>
 
                   <div className="space-y-6">
-                    {messes.map(mess => (
-                      <div key={mess.id} className="bg-orange-50/50 rounded-3xl p-6 border border-orange-100/50">
-                        <div className="flex items-center text-orange-700 text-xs font-bold uppercase tracking-wider mb-4">
-                          <Utensils className="w-4 h-4 mr-2" /> Current Menu
+                    {messes.map(mess => {
+                      const DAYS = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
+                      const TODAY = DAYS[new Date().getDay() === 0 ? 6 : new Date().getDay() - 1];
+                      let menuObj: Record<string, string> = {};
+                      try { menuObj = JSON.parse(mess.menu); } catch { menuObj = { monday: mess.menu }; }
+                      return (
+                        <div key={mess.id} className="bg-orange-50/50 rounded-3xl p-6 border border-orange-100/50">
+                          <div className="flex items-center text-orange-700 text-xs font-bold uppercase tracking-wider mb-4">
+                            <Utensils className="w-4 h-4 mr-2" /> Weekly Schedule
+                          </div>
+                          <div className="space-y-2 mb-5">
+                            {DAYS.map(day => (
+                              <div key={day} className={`flex items-start gap-3 p-2.5 rounded-xl transition-colors ${day === TODAY ? 'bg-orange-100 border border-orange-200' : ''}`}>
+                                <span className={`text-[10px] font-black uppercase tracking-widest w-10 shrink-0 mt-0.5 ${day === TODAY ? 'text-orange-600' : 'text-orange-300'}`}>{day.slice(0,3)}</span>
+                                <span className={`text-sm font-medium leading-snug ${day === TODAY ? 'text-orange-900 font-bold' : 'text-orange-700/60'}`}>{menuObj[day] || '—'}</span>
+                                {day === TODAY && <span className="ml-auto text-[9px] uppercase font-black text-orange-500 bg-orange-200 px-2 py-0.5 rounded-full">Today</span>}
+                              </div>
+                            ))}
+                          </div>
+                          <button
+                            onClick={() => setShowMenuModal(true)}
+                            className="mt-2 w-full py-3 bg-white border border-orange-200 text-orange-600 rounded-2xl font-bold text-sm hover:bg-orange-600 hover:text-white transition-all shadow-sm"
+                          >
+                            Update Weekly Menu
+                          </button>
                         </div>
-                        <p className="text-orange-900 font-medium text-lg leading-relaxed">
-                          {mess.menu}
-                        </p>
-                        <button
-                          onClick={() => setShowMenuModal(true)}
-                          className="mt-6 w-full py-3 bg-white border border-orange-200 text-orange-600 rounded-2xl font-bold text-sm hover:bg-orange-600 hover:text-white transition-all shadow-sm"
-                        >
-                          Update Today's Menu
-                        </button>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </section>
 
@@ -901,24 +932,27 @@ export default function Dashboard() {
             />
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
-              className="relative bg-white rounded-[2.5rem] p-8 w-full max-w-md shadow-2xl"
+              className="relative bg-white rounded-[2.5rem] p-8 w-full max-w-md shadow-2xl max-h-[90vh] overflow-y-auto"
             >
-              <h2 className="text-2xl font-bold mb-6">Update Today's Menu</h2>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-xs font-bold text-zinc-400 uppercase mb-1">Menu Content</label>
-                  <textarea
-                    value={newMenu}
-                    onChange={e => setNewMenu(e.target.value)}
-                    className="w-full px-4 py-3 bg-zinc-50 border border-zinc-100 rounded-xl focus:ring-2 focus:ring-orange-200 h-48"
-                    placeholder="e.g. Breakfast: Poha, Lunch: Dal Tadka..."
-                  />
-                </div>
+              <h2 className="text-2xl font-bold mb-6">Update Weekly Menu</h2>
+              <div className="space-y-3">
+                {['monday','tuesday','wednesday','thursday','friday','saturday','sunday'].map(day => (
+                  <div key={day}>
+                    <label className="block text-[10px] font-bold text-orange-400 uppercase tracking-widest mb-1">{day}</label>
+                    <input
+                      type="text"
+                      value={newMenu[day] || ''}
+                      onChange={e => setNewMenu({ ...newMenu, [day]: e.target.value })}
+                      className="w-full px-4 py-2.5 bg-zinc-50 border border-zinc-100 rounded-xl focus:ring-2 focus:ring-orange-200 text-sm"
+                      placeholder={`e.g. Roti, Dal, Sabzi`}
+                    />
+                  </div>
+                ))}
                 <button
                   onClick={() => updateMenu(messes[0].id)}
-                  className="w-full py-4 bg-orange-600 text-white rounded-2xl font-bold hover:bg-orange-700 transition-colors shadow-lg shadow-orange-200"
+                  className="w-full py-4 bg-orange-600 text-white rounded-2xl font-bold hover:bg-orange-700 transition-colors shadow-lg shadow-orange-200 mt-2"
                 >
-                  Update Menu
+                  Save Weekly Menu
                 </button>
               </div>
             </motion.div>
@@ -986,8 +1020,8 @@ export default function Dashboard() {
                   <label className="block text-xs font-bold text-zinc-400 uppercase mb-1">Price (Monthly)</label>
                   <input
                     type="number"
-                    value={newListing.price}
-                    onChange={e => setNewListing({ ...newListing, price: parseInt(e.target.value) })}
+                    value={newListing.price || ''}
+                    onChange={e => setNewListing({ ...newListing, price: parseInt(e.target.value) || 0 })}
                     className="w-full px-4 py-3 bg-zinc-50 border border-zinc-100 rounded-xl focus:ring-2 focus:ring-emerald-200"
                   />
                 </div>
@@ -1000,15 +1034,29 @@ export default function Dashboard() {
                     className="w-full px-4 py-3 bg-zinc-50 border border-zinc-100 rounded-xl focus:ring-2 focus:ring-emerald-200"
                   />
                 </div>
-                <div>
-                  <label className="block text-xs font-bold text-zinc-400 uppercase mb-1">Amenities (comma separated)</label>
-                  <input
-                    type="text"
-                    value={newListing.amenities}
-                    onChange={e => setNewListing({ ...newListing, amenities: e.target.value })}
-                    className="w-full px-4 py-3 bg-zinc-50 border border-zinc-100 rounded-xl focus:ring-2 focus:ring-emerald-200"
-                    placeholder="WiFi, RO Water, Bed"
-                  />
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-bold text-zinc-400 uppercase mb-3 text-left">Facilities</label>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-left">
+                    {['WiFi', 'RO Water', 'AC', 'Laundry', 'Parking', 'Security', 'Meals Included', 'Attached Washroom', 'Study Table', 'Power Backup'].map(amenity => (
+                      <label key={amenity} className="flex items-center space-x-3 cursor-pointer p-3 rounded-xl bg-zinc-50 border border-zinc-100 hover:border-emerald-200 transition-colors">
+                        <input
+                          type="checkbox"
+                          checked={(newListing.amenities || '').split(',').map(a => a.trim()).includes(amenity)}
+                          onChange={(e) => {
+                            let currentList = (newListing.amenities || '').split(',').map(a => a.trim()).filter(Boolean);
+                            if (e.target.checked) {
+                              if (!currentList.includes(amenity)) currentList.push(amenity);
+                            } else {
+                              currentList = currentList.filter(a => a !== amenity);
+                            }
+                            setNewListing({ ...newListing, amenities: currentList.join(', ') });
+                          }}
+                          className="w-4 h-4 text-emerald-600 rounded border-zinc-300 focus:ring-emerald-500 bg-white"
+                        />
+                        <span className="text-sm font-bold text-zinc-700 select-none overflow-hidden text-ellipsis whitespace-nowrap">{amenity}</span>
+                      </label>
+                    ))}
+                  </div>
                 </div>
                 <div className="md:col-span-2">
                   <label className="block text-xs font-bold text-zinc-400 uppercase mb-1">Description</label>
@@ -1118,24 +1166,82 @@ export default function Dashboard() {
                     placeholder="e.g. Roti, Dal, Paneer"
                   />
                 </div>
-                <div>
-                  <label className="block text-[10px] font-bold text-orange-400 uppercase tracking-widest mb-2">Image URL</label>
-                  <input
-                    type="text"
-                    className="w-full px-4 py-3 bg-zinc-50 border border-zinc-100 rounded-xl focus:ring-2 focus:ring-orange-200"
-                    value={newMess.image}
-                    onChange={e => setNewMess({ ...newMess, image: e.target.value })}
-                    placeholder="https://..."
-                  />
+                
+                {/* File Uploads for Kitchen */}
+                <div className="pt-4 mt-4 border-t border-zinc-100 space-y-4">
+                  <div>
+                    <label className="block text-[10px] font-bold text-orange-400 uppercase tracking-widest mb-2">Kitchen Photos</label>
+                    <div className="relative group border-2 border-dashed border-orange-200 rounded-2xl p-6 text-center hover:border-orange-500 hover:bg-orange-50/50 transition-all cursor-pointer">
+                      <input 
+                        type="file" multiple accept="image/jpeg, image/png" 
+                        onChange={(e) => { 
+                          if (e.target.files) setMessImages(prev => [...prev, ...Array.from(e.target.files!)]) 
+                        }} 
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
+                      />
+                      <UploadCloud className="w-6 h-6 text-orange-400 mx-auto mb-2" />
+                      <p className="text-sm font-bold text-orange-700">{messImages.length} photos selected</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[10px] font-bold text-orange-400 uppercase tracking-widest mb-2">FSSAI License</label>
+                      <div className="relative group border border-dashed border-zinc-200 rounded-xl p-4 text-center hover:border-orange-400 transition-all cursor-pointer bg-zinc-50">
+                        <input 
+                          type="file" accept="image/jpeg, image/png, application/pdf" 
+                          onChange={(e) => { if (e.target.files) setFssaiLicense(e.target.files[0]) }} 
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
+                        />
+                        <FilePlus className="w-5 h-5 text-zinc-400 mx-auto mb-1 group-hover:text-orange-500" />
+                        <span className="text-xs font-bold text-zinc-500 line-clamp-1">{fssaiLicense ? fssaiLicense.name : 'Upload PDF/JPG'}</span>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-orange-400 uppercase tracking-widest mb-2">Owner Aadhar</label>
+                      <div className="relative group border border-dashed border-zinc-200 rounded-xl p-4 text-center hover:border-orange-400 transition-all cursor-pointer bg-zinc-50">
+                        <input 
+                          type="file" accept="image/jpeg, image/png, application/pdf" 
+                          onChange={(e) => { if (e.target.files) setOwnerAadhar(e.target.files[0]) }} 
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
+                        />
+                        <FilePlus className="w-5 h-5 text-zinc-400 mx-auto mb-1 group-hover:text-orange-500" />
+                        <span className="text-xs font-bold text-zinc-500 line-clamp-1">{ownerAadhar ? ownerAadhar.name : 'Upload PDF/JPG'}</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
+
               </div>
               <button
                 onClick={async () => {
-                  const mess = await api.createMess({ ...newMess, owner_id: user?.id });
-                  if (mess) {
-                    setMesses([mess, ...messes]);
-                    setShowMessModal(false);
-                    setNewMess({ name: '', location: '', price_per_month: '', menu: '', image: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&q=80' });
+                  if (messImages.length === 0 || !fssaiLicense || !ownerAadhar) {
+                    alert("Please provide at least one photo and all required documents.");
+                    return;
+                  }
+                  
+                  const formData = new FormData();
+                  formData.append('owner_id', user?.id.toString() || '');
+                  formData.append('name', newMess.name);
+                  formData.append('location', newMess.location);
+                  formData.append('price_per_month', newMess.price_per_month);
+                  formData.append('menu', newMess.menu);
+                  messImages.forEach(file => formData.append('images', file));
+                  formData.append('fssai_license', fssaiLicense);
+                  formData.append('owner_aadhar', ownerAadhar);
+
+                  try {
+                    const mess = await api.createMess(formData);
+                    if (mess && mess.id) {
+                      setMesses([mess, ...messes]);
+                      setShowMessModal(false);
+                      setNewMess({ name: '', location: '', price_per_month: '', menu: '' });
+                      setMessImages([]);
+                      setFssaiLicense(null);
+                      setOwnerAadhar(null);
+                    }
+                  } catch (err: any) {
+                    alert(err.message);
                   }
                 }}
                 className="w-full mt-8 py-4 bg-orange-600 text-white rounded-2xl font-bold hover:bg-orange-700 transition-colors shadow-lg shadow-orange-200"

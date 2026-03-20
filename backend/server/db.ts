@@ -14,7 +14,8 @@ export function initDb() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      username TEXT UNIQUE,
+      email TEXT UNIQUE,
+      phone_number TEXT,
       password TEXT,
       role TEXT, -- 'student', 'owner', 'mess_owner'
       full_name TEXT
@@ -45,6 +46,8 @@ export function initDb() {
       description TEXT,
       contact TEXT,
       menu TEXT,
+      fssai_license TEXT,
+      owner_aadhar TEXT,
       FOREIGN KEY(owner_id) REFERENCES users(id)
     );
 
@@ -131,27 +134,27 @@ export function initDb() {
   // Seed data if empty
   const userCount = db.prepare("SELECT count(*) as count FROM users").get() as { count: number };
   if (userCount.count === 0) {
-    const insertUser = db.prepare("INSERT INTO users (username, password, role, full_name) VALUES (?, ?, ?, ?)");
-    insertUser.run('student1', 'password123', 'student', 'Rahul Sharma');
-    insertUser.run('owner1', 'password123', 'owner', 'Mr. Gupta');
-    insertUser.run('owner2', 'password123', 'owner', 'Mrs. Singh');
-    insertUser.run('mess_owner1', 'password123', 'mess_owner', 'Chef Anand');
+    const insertUser = db.prepare("INSERT INTO users (email, phone_number, password, role, full_name) VALUES (?, ?, ?, ?, ?)");
+    insertUser.run('student1@example.com', '1234567890', 'password123', 'student', 'Rahul Sharma');
+    insertUser.run('owner1@example.com', '0987654321', 'password123', 'owner', 'Mr. Gupta');
+    insertUser.run('owner2@example.com', '1122334455', 'password123', 'owner', 'Mrs. Singh');
+    insertUser.run('mess_owner1@example.com', '9988776655', 'password123', 'mess_owner', 'Chef Anand');
   }
 
   const listingCount = db.prepare("SELECT count(*) as count FROM listings").get() as { count: number };
   if (listingCount.count === 0) {
     const insertListing = db.prepare(`
-      INSERT INTO listings (owner_id, type, name, location, price, image, description, terms, contact, amenities)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO listings (owner_id, type, name, location, price, image, description, terms, contact, amenities, gender)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
-    insertListing.run(2, 'pg', 'Shree Ram PG', 'Koni Main Road, Near GGU Gate', 4500, 'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&w=800&q=80', 'Spacious rooms for students, walkable distance from Guru Ghasidas Vishwavidyalaya.', '1 month security deposit, No smoking, Gate closes at 10 PM.', '9876543210', 'WiFi, RO Water, Bed, Almirah');
-    insertListing.run(2, 'hostel', 'GGU Boys Hostel (Private)', 'Birkona Road, Koni', 3500, 'https://images.unsplash.com/photo-1555854877-bab0e564b8d5?auto=format&fit=crop&w=800&q=80', 'Affordable hostel for boys with mess facility included.', 'Advance payment required, ID proof mandatory.', '9123456789', 'Mess, Parking, 24/7 Water');
-    insertListing.run(3, 'flat', '2BHK Student Flat', 'Ratanpur Road, Near Koni Thana', 8000, 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=800&q=80', 'Perfect for a group of 4 students. Semi-furnished.', 'Electricity bill separate, 2 months deposit.', '8888877777', 'Kitchen, Balcony, Attached Washroom');
-    insertListing.run(3, 'pg', 'Durga Girls PG', 'Koni, Near Science College', 5000, 'https://images.unsplash.com/photo-1595526114035-0d45ed16cfbf?auto=format&fit=crop&w=800&q=80', 'Safe and secure PG for girls with all basic amenities.', 'Girls only, Visitors allowed till 7 PM.', '7776665554', 'CCTV, Security, Laundry');
-    insertListing.run(2, 'pg', 'Elite Boys PG', 'Near GGU Back Gate', 6000, 'https://images.unsplash.com/photo-1598928506311-c55ded91a20c?auto=format&fit=crop&w=800&q=80', 'Premium PG with AC and attached washrooms.', 'Security deposit 5000, 1 month notice.', '9990001112', 'AC, WiFi, Laundry, Power Backup');
-    insertListing.run(3, 'hostel', 'Saraswati Girls Hostel', 'Koni Market Area', 4200, 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80', 'Well-maintained hostel for girls with study room.', 'Strictly for students, ID required.', '8881112223', 'Study Room, WiFi, 24/7 Security');
-    insertListing.run(2, 'flat', '1BHK Studio for Students', 'Birkona, Near Petrol Pump', 4500, 'https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&w=800&q=80', 'Independent 1BHK, ideal for 2 students.', 'No brokerage, direct owner.', '7772223334', 'Kitchenette, Parking, RO Water');
+    insertListing.run(2, 'pg', 'Shree Ram PG', 'Koni Main Road, Near GGU Gate', 4500, 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80', 'Spacious rooms for students, walkable distance from Guru Ghasidas Vishwavidyalaya.', '1 month security deposit, No smoking, Gate closes at 10 PM.', '9876543210', 'WiFi, RO Water, Bed, Almirah', 'unisex');
+    insertListing.run(2, 'hostel', 'GGU Boys Hostel (Private)', 'Birkona Road, Koni', 3500, 'https://images.unsplash.com/photo-1505691938895-1758d7bef511?w=800&q=80', 'Affordable hostel for boys with mess facility included.', 'Advance payment required, ID proof mandatory.', '9123456789', 'Mess, Parking, 24/7 Water', 'male');
+    insertListing.run(3, 'flat', '2BHK Student Flat', 'Ratanpur Road, Near Koni Thana', 8000, 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800&q=80', 'Perfect for a group of 4 students. Semi-furnished.', 'Electricity bill separate, 2 months deposit.', '8888877777', 'Kitchen, Balcony, Attached Washroom', 'unisex');
+    insertListing.run(3, 'pg', 'Durga Girls PG', 'Koni, Near Science College', 5000, 'https://images.unsplash.com/photo-1519710164239-da123dc03ef4?w=800&q=80', 'Safe and secure PG for girls with all basic amenities.', 'Girls only, Visitors allowed till 7 PM.', '7776665554', 'CCTV, Security, Laundry', 'female');
+    insertListing.run(2, 'pg', 'Elite Boys PG', 'Near GGU Back Gate', 6000, 'https://images.unsplash.com/photo-1536376072261-38c75010e6c9?w=800&q=80', 'Premium PG with AC and attached washrooms.', 'Security deposit 5000, 1 month notice.', '9990001112', 'AC, WiFi, Laundry, Power Backup', 'male');
+    insertListing.run(3, 'hostel', 'Saraswati Girls Hostel', 'Koni Market Area', 4200, 'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=800&q=80', 'Well-maintained hostel for girls with study room.', 'Strictly for students, ID required.', '8881112223', 'Study Room, WiFi, 24/7 Security', 'female');
+    insertListing.run(2, 'flat', '1BHK Studio for Students', 'Birkona, Near Petrol Pump', 4500, 'https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=800&q=80', 'Independent 1BHK, ideal for 2 students.', 'No brokerage, direct owner.', '7772223334', 'Kitchenette, Parking, RO Water', 'unisex');
   }
 
   const messCount = db.prepare("SELECT count(*) as count FROM messes").get() as { count: number };
@@ -161,11 +164,11 @@ export function initDb() {
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
-    insertMess.run(4, 'Annapurna Mess', 'Koni Main Market', 2500, 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80', 'Home-style food for students. Lunch and Dinner provided.', '9998887776', 'Dal, Chawal, Sabzi, Roti, Salad');
-    insertMess.run(4, 'Student Delight Mess', 'Near GGU Back Gate', 2200, 'https://images.unsplash.com/photo-1547592166-23ac45744acd?auto=format&fit=crop&w=800&q=80', 'Budget friendly mess with special Sunday meals.', '8887776665', 'Veg Thali, Special Paneer on Sunday');
-    insertMess.run(4, 'Gourmet Student Tiffin', 'Koni, Near Science College', 3000, 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=800&q=80', 'Healthy and hygienic tiffin service delivered to your PG.', '7773334445', 'Mixed Veg, Paneer, Seasonal Fruits');
-    insertMess.run(4, 'Birkona Student Mess', 'Birkona Road', 2100, 'https://images.unsplash.com/photo-1567620905732-2d1ec7bb7445?auto=format&fit=crop&w=800&q=80', 'Affordable and clean mess for students living in Birkona.', '9991112223', 'Simple Veg Thali');
-    insertMess.run(4, 'Koni Spice Junction', 'Near Koni Thana', 2600, 'https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&w=800&q=80', 'Known for spicy and delicious North Indian food.', '8882223334', 'Aloo Paratha, Chole Bhature, Regular Thali');
+    insertMess.run(4, 'Annapurna Mess', 'Koni Main Market', 2500, 'https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=800&q=80', 'Home-style food for students. Lunch and Dinner provided.', '9998887776', 'Dal, Chawal, Sabzi, Roti, Salad');
+    insertMess.run(4, 'Student Delight Mess', 'Near GGU Back Gate', 2200, 'https://images.unsplash.com/photo-1626777552726-4a6b54c97e46?w=800&q=80', 'Budget friendly mess with special Sunday meals.', '8887776665', 'Veg Thali, Special Paneer on Sunday');
+    insertMess.run(4, 'Gourmet Student Tiffin', 'Koni, Near Science College', 3000, 'https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=800&q=80', 'Healthy and hygienic tiffin service delivered to your PG.', '7773334445', 'Mixed Veg, Paneer, Seasonal Fruits');
+    insertMess.run(4, 'Birkona Student Mess', 'Birkona Road', 2100, 'https://images.unsplash.com/photo-1601050690597-df0568f70950?w=800&q=80', 'Affordable and clean mess for students living in Birkona.', '9991112223', 'Simple Veg Thali');
+    insertMess.run(4, 'Koni Spice Junction', 'Near Koni Thana', 2600, 'https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=800&q=80', 'Known for spicy and delicious North Indian food.', '8882223334', 'Aloo Paratha, Chole Bhature, Regular Thali');
   }
 }
 

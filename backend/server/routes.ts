@@ -10,7 +10,7 @@ const __dirname = path.dirname(__filename);
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const dir = path.join(__dirname, "../../uploads");
+    const dir = path.join(__dirname, "../uploads");
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
     }
@@ -40,17 +40,17 @@ const router = Router();
 
 // Auth Routes
 router.post("/auth/signup", (req, res) => {
-  const { username, password, full_name, role } = req.body;
+  const { email, phone_number, password, full_name, role } = req.body;
   try {
     const info = db.prepare(
-      "INSERT INTO users (username, password, full_name, role) VALUES (?, ?, ?, ?)"
-    ).run(username, password, full_name, role);
+      "INSERT INTO users (email, phone_number, password, full_name, role) VALUES (?, ?, ?, ?, ?)"
+    ).run(email, phone_number, password, full_name, role);
 
     const user = db.prepare("SELECT * FROM users WHERE id = ?").get(info.lastInsertRowid);
     res.json({ success: true, user });
   } catch (err: any) {
-    if (err.message.includes("UNIQUE constraint failed: users.username")) {
-      res.status(400).json({ error: "Username already exists" });
+    if (err.message.includes("UNIQUE constraint failed: users.email")) {
+      res.status(400).json({ error: "Email already exists" });
     } else {
       res.status(500).json({ error: "Failed to create user" });
     }
@@ -58,13 +58,13 @@ router.post("/auth/signup", (req, res) => {
 });
 
 router.post("/auth/login", (req, res) => {
-  const { username, password } = req.body;
-  const user = db.prepare("SELECT * FROM users WHERE username = ? AND password = ?").get(username, password);
+  const { email, password } = req.body;
+  const user = db.prepare("SELECT * FROM users WHERE email = ? AND password = ?").get(email, password);
 
   if (user) {
     res.json({ success: true, user });
   } else {
-    res.status(401).json({ error: "Invalid username or password" });
+    res.status(401).json({ error: "Invalid email or password" });
   }
 });
 
@@ -84,15 +84,37 @@ router.get("/messes", (req, res) => {
   res.json(messes);
 });
 
-router.post("/messes", (req, res) => {
-  const { owner_id, name, location, price_per_month, menu, image } = req.body;
+router.post("/messes", upload.fields([
+  { name: 'images', maxCount: 5 },
+  { name: 'fssai_license', maxCount: 1 },
+  { name: 'owner_aadhar', maxCount: 1 }
+]), (req, res) => {
+  const { owner_id, name, location, price_per_month, menu } = req.body;
+  
   try {
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+    
+    // Process Images array
+    let imagePaths: string[] = [];
+    if (files.images && files.images.length > 0) {
+      imagePaths = files.images.map(f => "/uploads/" + f.filename);
+    }
+    const imageString = JSON.stringify(imagePaths);
+
+    // Process Documents
+    const fssaiPath = files.fssai_license && files.fssai_license.length > 0 
+      ? "/uploads/" + files.fssai_license[0].filename : null;
+    const aadharPath = files.owner_aadhar && files.owner_aadhar.length > 0 
+      ? "/uploads/" + files.owner_aadhar[0].filename : null;
+
     const info = db.prepare(
-      "INSERT INTO messes (owner_id, name, location, price_per_month, menu, image) VALUES (?, ?, ?, ?, ?, ?)"
-    ).run(owner_id, name, location, price_per_month, menu, image);
+      "INSERT INTO messes (owner_id, name, location, price_per_month, menu, image, fssai_license, owner_aadhar) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+    ).run(owner_id, name, location, price_per_month, menu, imageString, fssaiPath, aadharPath);
+    
     const mess = db.prepare("SELECT * FROM messes WHERE id = ?").get(info.lastInsertRowid);
     res.json(mess);
   } catch (err) {
+    console.error("Mess creation error:", err);
     res.status(500).json({ error: "Failed to create mess" });
   }
 });

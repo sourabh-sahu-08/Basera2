@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Listing } from '../types';
-import { MapPin, Phone, CheckCircle2, Copy, BookmarkPlus, Check, ArrowUpRight } from 'lucide-react';
+import { MapPin, Info, CheckCircle2, BookmarkPlus, Check, ArrowUpRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useUser } from '../context/UserContext';
 import { useNavigate } from 'react-router-dom';
@@ -17,14 +17,22 @@ export default function ListingCard({ listing }: Props) {
   const { user } = useUser();
   const navigate = useNavigate();
 
+  const processImg = (img: string) => {
+    if (!img) return img;
+    if (!img.startsWith('http') && !img.startsWith('/')) return '/uploads/' + img;
+    return img;
+  };
+
   let displayImage = listing.image;
   try {
     const parsed = JSON.parse(listing.image);
     if (Array.isArray(parsed) && parsed.length > 0) {
-      displayImage = parsed[0];
+      displayImage = processImg(parsed[0]);
+    } else {
+      displayImage = processImg(String(parsed));
     }
   } catch (e) {
-    // Falls back to string (mock data)
+    displayImage = processImg(listing.image);
   }
 
   const handleBookClick = () => {
@@ -120,38 +128,13 @@ export default function ListingCard({ listing }: Props) {
 
         <div className="mt-auto flex gap-3">
           <div className="flex-1">
-            <AnimatePresence mode="wait">
-              {!showNumber ? (
-                <motion.button
-                  key="contact-btn"
-                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                  onClick={() => setShowNumber(true)}
-                  className="w-full flex items-center justify-center space-x-2 bg-zinc-100 text-zinc-900 px-6 py-4 rounded-2xl text-sm font-black uppercase tracking-widest hover:bg-zinc-200 transition-colors"
-                >
-                  <Phone className="w-4 h-4" />
-                  <span>Reach Out</span>
-                </motion.button>
-              ) : (
-                <motion.div
-                  key="number-reveal"
-                  initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-                  className="flex items-center justify-between bg-zinc-900 text-white px-4 py-4 rounded-2xl border border-zinc-800"
-                >
-                  <div className="text-sm font-black tracking-widest pl-2">
-                    {listing.contact}
-                  </div>
-                  <button
-                    onClick={() => {
-                      navigator.clipboard.writeText(listing.contact);
-                      alert('Number copied to clipboard! 🚀');
-                    }}
-                    className="p-1.5 hover:bg-white/10 rounded-xl transition-colors"
-                  >
-                    <Copy className="w-4 h-4" />
-                  </button>
-                </motion.div>
-              )}
-            </AnimatePresence>
+            <button
+              onClick={() => navigate(`/property/${listing.id}`)}
+              className="w-full flex items-center justify-center space-x-2 bg-zinc-100 text-zinc-900 px-6 py-4 rounded-2xl text-sm font-black uppercase tracking-widest hover:bg-zinc-200 transition-colors"
+            >
+              <Info className="w-4 h-4" />
+              <span>About</span>
+            </button>
           </div>
 
           <button
