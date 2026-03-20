@@ -6,3 +6,14 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# SQLite databases
+*.db
+*.sqlite
+
+# Uploaded files (ephemeral on Render free tier)
+uploads/
+
+# Test output
+test_log.txt
+test_out.txt
