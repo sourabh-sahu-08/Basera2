@@ -1,6 +1,5 @@
 import express from "express";
 import fs from "fs";
-import { createServer as createViteServer } from "vite";
 import path from "path";
 import { fileURLToPath } from "url";
 import { initDb } from "./db.js";
@@ -16,6 +15,22 @@ async function startServer() {
   // Initialize DB
   initDb();
 
+  // CORS — allow Vercel frontend and localhost dev
+  app.use((req, res, next) => {
+    const allowedOrigins = [
+      'http://localhost:5173',
+      'http://localhost:3000',
+    ];
+    const origin = req.headers.origin || '';
+    if (allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+    }
+    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization');
+    if (req.method === 'OPTIONS') { res.sendStatus(204); return; }
+    next();
+  });
+
   app.use(express.json());
 
   // Ensure uploads directory exists and serve it
@@ -27,6 +42,7 @@ async function startServer() {
 
   // API Routes
   app.use("/api", apiRoutes);
+
 
   // Production static files — only if frontend dist exists (local only; on Render, frontend is on Vercel)
   if (process.env.NODE_ENV === "production" || process.env.SERVE_STATIC === "true") {
