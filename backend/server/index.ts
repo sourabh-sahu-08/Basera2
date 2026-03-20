@@ -28,13 +28,15 @@ async function startServer() {
   // API Routes
   app.use("/api", apiRoutes);
 
-  // Production static files
+  // Production static files — only if frontend dist exists (local only; on Render, frontend is on Vercel)
   if (process.env.NODE_ENV === "production" || process.env.SERVE_STATIC === "true") {
     const distPath = path.resolve(__dirname, "../../frontend/dist");
-    app.use(express.static(distPath));
-    app.get("*", (req, res) => {
-      res.sendFile(path.join(distPath, "index.html"));
-    });
+    if (fs.existsSync(distPath)) {
+      app.use(express.static(distPath));
+      app.get("*", (req, res) => {
+        res.sendFile(path.join(distPath, "index.html"));
+      });
+    }
   }
 
   app.listen(PORT, "0.0.0.0", () => {
