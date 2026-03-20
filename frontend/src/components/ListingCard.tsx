@@ -35,6 +35,11 @@ export default function ListingCard({ listing }: Props) {
     displayImage = processImg(listing.image);
   }
 
+  const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=800&q=80';
+  if (!displayImage || displayImage === 'undefined' || displayImage === '/uploads/') {
+    displayImage = FALLBACK_IMAGE;
+  }
+
   const handleBookClick = () => {
     if (!user) {
       navigate('/login');

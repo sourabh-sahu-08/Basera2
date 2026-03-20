@@ -92,6 +92,9 @@ export default function ListingDetails() {
     images = [processImg(listing.image)];
   }
 
+  // Filter out invalid images
+  images = images.filter(img => img && img !== 'undefined' && img !== '/uploads/');
+
   const amenities = (listing.amenities || '').split(',').filter(Boolean).map(a => a.trim());
 
   const handleBookClick = () => {
