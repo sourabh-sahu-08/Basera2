@@ -3,11 +3,11 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Listing } from '../types';
 import { api } from '../services/api';
 import {
-  MapPin, Phone, Copy, BookmarkPlus, Check, ArrowLeft, MessageCircle,
+  MapPin, BookmarkPlus, Check, ArrowLeft, MessageCircle,
   Wifi, Droplets, Wind, ShieldCheck, Car, Utensils, Zap, Tv,
   WashingMachine, Dumbbell, Star, Calendar, Users, Home, ChevronRight
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion } from 'motion/react';
 import { useUser } from '../context/UserContext';
 import ChatBox from '../components/ChatBox';
 
@@ -38,7 +38,6 @@ export default function ListingDetails() {
   const { user } = useUser();
   const [listing, setListing] = useState<Listing | null>(null);
   const [loading, setLoading] = useState(true);
-  const [showNumber, setShowNumber] = useState(false);
   const [isBooked, setIsBooked] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [activeImg, setActiveImg] = useState(0);
@@ -294,34 +293,6 @@ export default function ListingDetails() {
                     <MessageCircle className="w-5 h-5" />
                     <span>Chat with Owner</span>
                   </button>
-
-                  <AnimatePresence mode="wait">
-                    {!showNumber ? (
-                      <motion.button
-                        key="contact-btn"
-                        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                        onClick={() => setShowNumber(true)}
-                        className="w-full flex items-center justify-center space-x-2 bg-zinc-100 text-zinc-900 px-6 py-4 rounded-2xl text-sm font-black uppercase tracking-widest hover:bg-zinc-200 transition-colors"
-                      >
-                        <Phone className="w-5 h-5" />
-                        <span>Show Phone Number</span>
-                      </motion.button>
-                    ) : (
-                      <motion.div
-                        key="number-reveal"
-                        initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-                        className="flex items-center justify-between bg-zinc-900 text-white px-6 py-4 rounded-2xl"
-                      >
-                        <div className="text-lg font-black tracking-widest">{listing.contact}</div>
-                        <button
-                          onClick={() => { navigator.clipboard.writeText(listing.contact); alert('Copied! 🚀'); }}
-                          className="p-2 hover:bg-white/10 rounded-xl transition-colors"
-                        >
-                          <Copy className="w-5 h-5" />
-                        </button>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
                 </div>
               </div>
 

@@ -1,14 +1,47 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ShieldCheck, X, UploadCloud, AlertCircle } from 'lucide-react';
+import { ShieldCheck, X, UploadCloud, AlertCircle, CreditCard } from 'lucide-react';
 import { useUser } from '../context/UserContext';
 import { api } from '../services/api';
+import { loadStripe } from '@stripe/stripe-js';
+import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { Listing } from '../types';
 
-export default function BookingPage() {
+const stripePromise = loadStripe((import.meta as any).env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_demo');
+
+const CARD_ELEMENT_OPTIONS = {
+  style: {
+    base: {
+      color: '#18181b', // zinc-900
+      fontFamily: '"Inter", sans-serif',
+      fontSmoothing: 'antialiased',
+      fontSize: '16px',
+      '::placeholder': {
+        color: '#a1a1aa' // zinc-400
+      }
+    },
+    invalid: {
+      color: '#ef4444', // red-500
+      iconColor: '#ef4444'
+    }
+  }
+};
+
+function BookingPageContent() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useUser();
   const listingId = parseInt(id || '0');
+  const stripe = useStripe();
+  const elements = useElements();
+
+  const [listing, setListing] = useState<Listing | null>(null);
+
+  useEffect(() => {
+    if (listingId) {
+      api.fetchListingById(listingId).then(setListing).catch(console.error);
+    }
+  }, [listingId]);
 
   const [formData, setFormData] = useState({
     contact_number: '',
@@ -62,25 +95,65 @@ export default function BookingPage() {
       return;
     }
 
+    if (!listing) {
+      setError('Listing details not loaded. Please wait.');
+      return;
+    }
+
+    if (!stripe || !elements) {
+      setError('Stripe has not loaded. Please refresh the page.');
+      return;
+    }
+
     setLoading(true);
     setError('');
 
-    const submitData = new FormData();
-    submitData.append('student_id', user.id.toString());
-    submitData.append('listing_id', listingId.toString());
-    submitData.append('contact_number', formData.contact_number);
-    submitData.append('move_in_date', formData.move_in_date);
-    submitData.append('duration_months', formData.duration_months.toString());
-    submitData.append('aadhar_card', files.aadhar_card);
-    submitData.append('college_id', files.college_id);
-    submitData.append('declaration', files.declaration);
-
     try {
+      // 1. Create Payment Intent
+      const amount = listing.price * formData.duration_months;
+      const { clientSecret } = await api.createPaymentIntent(amount);
+
+      // 2. Confirm Card Payment
+      const cardElement = elements.getElement(CardElement);
+      if (!cardElement) throw new Error('Card element not found');
+
+      const paymentResult = await stripe.confirmCardPayment(clientSecret, {
+        payment_method: {
+          card: cardElement,
+          billing_details: {
+            name: user.full_name,
+            email: user.email,
+            phone: formData.contact_number,
+          },
+        },
+      });
+
+      if (paymentResult.error) {
+        throw new Error(paymentResult.error.message || 'Payment failed');
+      }
+
+      if (paymentResult.paymentIntent?.status !== 'succeeded') {
+        throw new Error('Payment was not successful');
+      }
+
+      // 3. Create Secure Booking
+      const submitData = new FormData();
+      submitData.append('student_id', user.id.toString());
+      submitData.append('listing_id', listingId.toString());
+      submitData.append('contact_number', formData.contact_number);
+      submitData.append('move_in_date', formData.move_in_date);
+      submitData.append('duration_months', formData.duration_months.toString());
+      submitData.append('aadhar_card', files.aadhar_card);
+      submitData.append('college_id', files.college_id);
+      submitData.append('declaration', files.declaration);
+      submitData.append('payment_id', paymentResult.paymentIntent.id);
+      submitData.append('amount', amount.toString());
+
       await api.createSecureBooking(submitData);
-      alert('Booking request submitted successfully! Pending verification.');
+      alert('Payment successful and booking request submitted! Pending document verification.');
       navigate('/dashboard');
     } catch (err: any) {
-      setError(err.message || 'An error occurred while submitting the booking request.');
+      setError(err.message || 'An error occurred during booking or payment.');
     } finally {
       setLoading(false);
     }
@@ -197,16 +270,45 @@ export default function BookingPage() {
               </div>
             </div>
 
+            <div className="space-y-6 mt-10">
+              <h3 className="flex items-center text-xl font-bold text-zinc-900 tracking-tight">
+                <span className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mr-3 text-sm">3</span>
+                Payment Details
+              </h3>
+              <div className="bg-white border border-zinc-200 rounded-2xl p-6 md:ml-11">
+                <div className="flex justify-between items-center mb-6">
+                  <span className="text-sm font-bold text-zinc-500">Total Amount to Pay</span>
+                  <span className="text-2xl font-black text-zinc-900">
+                    ₹{listing ? (listing.price * formData.duration_months).toLocaleString() : '---'}
+                  </span>
+                </div>
+                <div className="border border-zinc-200 rounded-xl p-4 bg-zinc-50 focus-within:ring-2 focus-within:ring-emerald-500 focus-within:border-emerald-500 transition-all">
+                  <CardElement options={CARD_ELEMENT_OPTIONS} />
+                </div>
+                <div className="flex items-center gap-2 mt-4 text-xs font-bold text-zinc-400">
+                  <CreditCard className="w-4 h-4" /> Secure payment powered by Stripe
+                </div>
+              </div>
+            </div>
+
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || !stripe || !elements || !listing}
               className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black px-6 py-5 rounded-2xl transition-all disabled:opacity-50 tracking-wide uppercase text-sm shadow-xl shadow-emerald-600/20 hover:shadow-emerald-600/30 active:scale-[0.98] focus:ring-4 focus:ring-emerald-500/20"
             >
-              {loading ? 'Submitting Request...' : 'Submit Secure Booking Request'}
+              {loading ? 'Processing...' : 'Pay & Submit Request'}
             </button>
           </form>
         </div>
       </div>
     </div>
+  );
+}
+
+export default function BookingPage() {
+  return (
+    <Elements stripe={stripePromise}>
+      <BookingPageContent />
+    </Elements>
   );
 }

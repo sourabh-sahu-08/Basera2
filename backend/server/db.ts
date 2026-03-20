@@ -62,6 +62,8 @@ export function initDb() {
       aadhar_card_url TEXT,
       college_id_url TEXT,
       declaration_url TEXT,
+      payment_id TEXT,
+      amount INTEGER,
       booking_date DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY(student_id) REFERENCES users(id),
       FOREIGN KEY(listing_id) REFERENCES listings(id)
@@ -114,6 +116,12 @@ export function initDb() {
         ALTER TABLE bookings ADD COLUMN aadhar_card_url TEXT;
         ALTER TABLE bookings ADD COLUMN college_id_url TEXT;
         ALTER TABLE bookings ADD COLUMN declaration_url TEXT;
+      `);
+    }
+    if (!columns.includes('payment_id')) {
+      db.exec(`
+        ALTER TABLE bookings ADD COLUMN payment_id TEXT;
+        ALTER TABLE bookings ADD COLUMN amount INTEGER;
       `);
     }
   } catch (e) {

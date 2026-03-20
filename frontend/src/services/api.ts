@@ -159,6 +159,19 @@ export const api = {
     return res.json();
   },
 
+  async createPaymentIntent(amount: number): Promise<{ clientSecret: string }> {
+    const res = await fetch('/api/payments/create-payment-intent', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ amount }),
+    });
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.error || 'Failed to create payment intent');
+    }
+    return res.json();
+  },
+
   async createSubscription(studentId: number, messId: number): Promise<{ id: number }> {
     const res = await fetch('/api/subscriptions', {
       method: 'POST',

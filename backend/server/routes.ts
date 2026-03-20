@@ -4,9 +4,20 @@ import multer from "multer";
 import path from "path";
 import { fileURLToPath } from "url";
 import fs from "fs";
+import dotenv from "dotenv";
+import Stripe from "stripe";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+dotenv.config({ path: path.join(__dirname, "../.env") });
+const stripeKey = process.env.STRIPE_SECRET_KEY;
+if (!stripeKey || stripeKey.includes("YOUR_")) {
+  console.warn("WARNING: Stripe secret key is not configured correctly in backend/.env!");
+}
+const stripe = new Stripe(stripeKey || "sk_test_dummy", {
+  apiVersion: "2023-10-16" as any,
+});
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -37,6 +48,22 @@ const upload = multer({
 });
 
 const router = Router();
+
+router.post("/payments/create-payment-intent", async (req, res) => {
+  const { amount } = req.body;
+  try {
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: amount * 100, // convert INR to paise
+      currency: "inr",
+      automatic_payment_methods: {
+        enabled: true,
+      },
+    });
+    res.json({ clientSecret: paymentIntent.client_secret });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
 // Auth Routes
 router.post("/auth/signup", (req, res) => {
@@ -264,7 +291,7 @@ router.post("/bookings/secure", upload.fields([
 ]), (req, res) => {
   try {
     const files = req.files as { [fieldname: string]: Express.Multer.File[] };
-    const { student_id, listing_id, contact_number, move_in_date, duration_months } = req.body;
+    const { student_id, listing_id, contact_number, move_in_date, duration_months, payment_id, amount } = req.body;
     
     // Check if required files are present
     if (!files['aadhar_card'] || !files['college_id'] || !files['declaration']) {
@@ -276,11 +303,11 @@ router.post("/bookings/secure", upload.fields([
     const declaration_url = '/uploads/' + files['declaration'][0].filename;
 
     const info = db.prepare(`
-      INSERT INTO bookings (student_id, listing_id, status, contact_number, move_in_date, duration_months, aadhar_card_url, college_id_url, declaration_url)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO bookings (student_id, listing_id, status, contact_number, move_in_date, duration_months, aadhar_card_url, college_id_url, declaration_url, payment_id, amount)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
-      student_id, listing_id, 'pending_verification', contact_number, move_in_date, duration_months,
-      aadhar_card_url, college_id_url, declaration_url
+      student_id, listing_id, 'confirmed', contact_number, move_in_date, duration_months,
+      aadhar_card_url, college_id_url, declaration_url, payment_id, parseInt(amount, 10) || 0
     );
 
     res.json({ id: info.lastInsertRowid });
