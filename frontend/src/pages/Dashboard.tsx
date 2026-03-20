@@ -71,10 +71,12 @@ export default function Dashboard() {
   };
 
   const getDisplayImage = (img: string) => {
-    if (!img) return '/placeholder.jpg';
+    const FALLBACK = 'https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=800&q=80';
+    if (!img || img === 'undefined' || img === '/uploads/') return FALLBACK;
     try {
       const parsed = JSON.parse(img);
       let p = Array.isArray(parsed) && parsed.length > 0 ? parsed[0] : String(parsed);
+      if (!p || p === 'undefined' || p === '/uploads/') return FALLBACK;
       return (!p.startsWith('http') && !p.startsWith('/')) ? '/uploads/' + p : p;
     } catch (e) {
       return (!img.startsWith('http') && !img.startsWith('/')) ? '/uploads/' + img : img;

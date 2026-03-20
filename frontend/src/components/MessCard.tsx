@@ -30,8 +30,9 @@ export default function MessCard({ mess }: Props) {
   const todayMenu = menuObj[TODAY] || "Chef's Special";
 
   // Process image path
+  const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=800&q=80';
   const processImg = (img: string) => {
-    if (!img) return '/placeholder.jpg';
+    if (!img || img === 'undefined' || img === '/uploads/') return FALLBACK_IMAGE;
     if (!img.startsWith('http') && !img.startsWith('/')) return '/uploads/' + img;
     return img;
   };
@@ -42,6 +43,7 @@ export default function MessCard({ mess }: Props) {
   } catch {
     displayImage = processImg(mess.image);
   }
+  if (!displayImage || displayImage === FALLBACK_IMAGE) displayImage = FALLBACK_IMAGE;
 
   const handleSubscribe = async () => {
     if (!user) { navigate('/login'); return; }
